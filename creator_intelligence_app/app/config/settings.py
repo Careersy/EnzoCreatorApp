@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,7 +18,29 @@ if load_dotenv is not None:
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
-DATA_DIR = ROOT_DIR / "data"
+
+
+def _resolve_data_dir() -> Path:
+    configured = os.getenv("APP_DATA_DIR")
+    if configured:
+        return Path(configured).expanduser()
+
+    default = ROOT_DIR / "data"
+    running_on_vercel = os.getenv("VERCEL") == "1"
+    if running_on_vercel:
+        return Path(tempfile.gettempdir()) / "enzo_creator_app_data"
+
+    try:
+        default.mkdir(parents=True, exist_ok=True)
+        probe = default / ".write_test"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        return default
+    except Exception:
+        return Path(tempfile.gettempdir()) / "enzo_creator_app_data"
+
+
+DATA_DIR = _resolve_data_dir()
 UPLOAD_DIR = DATA_DIR / "uploads"
 EXPORT_DIR = DATA_DIR / "exports"
 INDEX_DIR = DATA_DIR / "indexes"
