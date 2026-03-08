@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: enzo-creator-app
+    runtime: python
+    plan: free
+    region: oregon
+    branch: main
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn creator_intelligence_app.app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: LOCAL_PRIVATE_MODE
+        value: "false"
+      - key: CORS_ALLOW_ORIGINS
+        value: "*"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USERNAME
+        sync: false
+      - key: NEO4J_PASSWORD
+        sync: false
+      - key: NEO4J_DATABASE
+        sync: false
+      - key: API_AUTH_ENABLED
+        value: "false"
+
