@@ -17,6 +17,10 @@ function switchToTab(tabId) {
   if (panel) panel.classList.add('active');
 }
 
+function openSettingsTab() {
+  switchToTab('settings');
+}
+
 function esc(value) {
   return String(value || '')
     .replaceAll('&', '&amp;')
@@ -99,6 +103,46 @@ async function postJson(url, body) {
 
 async function getJson(url) {
   return requestJson(url, { headers: apiHeaders() });
+}
+
+async function initModelAlertBanner() {
+  const banner = document.getElementById('modelAlertBanner');
+  const textEl = document.getElementById('modelAlertText');
+  const actionBtn = document.getElementById('modelAlertAction');
+  if (!banner || !textEl || !actionBtn) return;
+
+  actionBtn.addEventListener('click', () => openSettingsTab());
+
+  const status = await getJson('/api/model/status');
+  if (status?.error) {
+    banner.classList.remove('hidden');
+    textEl.textContent = 'Unable to verify model connectivity. Open Settings and click "Check model connection".';
+    return;
+  }
+
+  const connected = !!status?.connected;
+  const providerPolicy = String(status?.provider_policy || 'auto');
+  const anthropicConnected = !!status?.anthropic_connected;
+  const openaiConnected = !!status?.openai_connected;
+
+  if (connected) {
+    banner.classList.add('hidden');
+    return;
+  }
+
+  banner.classList.remove('hidden');
+  if (providerPolicy === 'anthropic' && !anthropicConnected) {
+    textEl.textContent =
+      'Claude is not connected. Add ANTHROPIC_API_KEY in deployment environment variables and redeploy.';
+    return;
+  }
+  if (providerPolicy === 'openai' && !openaiConnected) {
+    textEl.textContent =
+      'OpenAI is not connected. Add OPENAI_API_KEY in deployment environment variables and redeploy.';
+    return;
+  }
+  textEl.textContent =
+    'No LLM provider is connected. Add ANTHROPIC_API_KEY or OPENAI_API_KEY in environment variables and redeploy.';
 }
 
 /* ---------- Pretty Rendering ---------- */
@@ -1806,3 +1850,5 @@ neo4jImportForm?.addEventListener('submit', async (e) => {
     }),
   );
 });
+
+initModelAlertBanner();

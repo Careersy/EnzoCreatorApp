@@ -132,6 +132,31 @@ body {
   font-weight: 600;
 }
 
+.model-alert {
+  margin-bottom: var(--s-4);
+  border: 1px solid #e2c9a7;
+  background: #fff4e6;
+  color: #5c3d20;
+  border-radius: var(--r-lg);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+
+.model-alert button {
+  width: auto;
+  margin: 0;
+  border-color: #d4b98f;
+  background: #f7e7ce;
+  color: #5a3c1f;
+}
+
+.model-alert button:hover {
+  background: #efd9b7;
+}
+
 /* ----- App Shell ----- */
 .workspace {
   display: grid;
