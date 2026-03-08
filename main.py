@@ -1,8 +1,3 @@
-from fastapi import FastAPI
+"""Vercel/FastAPI entrypoint."""
 
-app = FastAPI()
-
-
-@app.get("/")
-def read_root() -> dict[str, str]:
-    return {"Python": "on Vercel"}
+from creator_intelligence_app.app.main import app
