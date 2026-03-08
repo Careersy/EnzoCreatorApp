@@ -174,8 +174,8 @@
           <button id="refreshSources">Refresh Sources</button>
           <button id="refreshJobs">Refresh Jobs</button>
           <button id="runReindexAll">Reindex All Sources</button>
-          <pre id="sourcesOutput"></pre>
-          <pre id="jobsOutput"></pre>
+          <div id="sourcesOutput" class="result-stack"></div>
+          <div id="jobsOutput" class="result-stack"></div>
         </div>
       </section>
 
@@ -266,6 +266,41 @@
 
       <section class="tab-panel" id="planner">
         <h2>Content Planner</h2>
+        <section class="planner-posts">
+          <div class="planner-posts-header">
+            <h3>Posts</h3>
+            <input id="plannerSearchInput" type="text" placeholder="Search posts..." />
+            <button id="plannerLabelsBtn" type="button" class="btn-ghost">Labels</button>
+          </div>
+          <div class="planner-board">
+            <article class="planner-column">
+              <header>All posts <span id="plannerCountAll" class="planner-count">0</span></header>
+              <div id="plannerColAll" class="planner-column-body"></div>
+              <button type="button" class="planner-add-card" data-post-status="all">+ Add a card</button>
+            </article>
+            <article class="planner-column">
+              <header>Ideas <span id="plannerCountIdeas" class="planner-count">0</span></header>
+              <div id="plannerColIdeas" class="planner-column-body"></div>
+              <button type="button" class="planner-add-card" data-post-status="ideas">+ Add a card</button>
+            </article>
+            <article class="planner-column">
+              <header>Draft <span id="plannerCountDraft" class="planner-count">0</span></header>
+              <div id="plannerColDraft" class="planner-column-body"></div>
+              <button type="button" class="planner-add-card" data-post-status="draft">+ Add a card</button>
+            </article>
+            <article class="planner-column">
+              <header>Scheduled <span id="plannerCountScheduled" class="planner-count">0</span></header>
+              <div id="plannerColScheduled" class="planner-column-body"></div>
+              <button type="button" class="planner-add-card" data-post-status="scheduled">+ Add a card</button>
+            </article>
+            <article class="planner-column">
+              <header>Published <span id="plannerCountPublished" class="planner-count">0</span></header>
+              <div id="plannerColPublished" class="planner-column-body"></div>
+              <button type="button" class="planner-add-card" data-post-status="published">+ Add a card</button>
+            </article>
+          </div>
+        </section>
+
         <div class="grid two">
           <form id="planForm" class="card">
             <h3>Series Plan</h3>
@@ -441,7 +476,7 @@
           <button type="submit">Import knowledge-graph.json to Neo4j</button>
         </form>
 
-        <pre id="settingsOutput"></pre>
+        <div id="settingsOutput" class="result-stack"></div>
       </section>
       </main>
     </div>

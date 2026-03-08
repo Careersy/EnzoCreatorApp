@@ -26,7 +26,8 @@ function esc(value) {
 
 function renderJson(elId, payload) {
   const el = document.getElementById(elId);
-  if (el) el.textContent = JSON.stringify(payload, null, 2);
+  if (!el) return;
+  el.innerHTML = renderStructuredPayload(payload);
 }
 
 function attrEncode(value) {
@@ -192,8 +193,40 @@ function resultCard(title, bodyHtml, opts = {}) {
   return `<section class="result-card${tone}"><h3>${esc(title)}</h3><div class="prose">${bodyHtml}</div></section>`;
 }
 
-function rawJsonDetails(payload) {
-  return `<details class="raw-json"><summary>View raw JSON</summary><pre>${esc(JSON.stringify(payload || {}, null, 2))}</pre></details>`;
+function objectSummaryTable(obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return `<p>${esc(toShortLine(obj))}</p>`;
+  const entries = Object.entries(obj);
+  if (!entries.length) return '<p class="muted">No fields available.</p>';
+  return `<table class="kv-table">
+    <tbody>
+      ${entries
+        .map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(toShortLine(v))}</td></tr>`)
+        .join('')}
+    </tbody>
+  </table>`;
+}
+
+function renderStructuredPayload(payload) {
+  if (payload?.error) {
+    return resultCard('Error', `<p>${esc(payload.detail || 'Request failed')}</p>`, { tone: 'danger' });
+  }
+
+  if (Array.isArray(payload)) {
+    if (!payload.length) return resultCard('Result', '<p class="muted">No records found.</p>');
+    return payload
+      .slice(0, 50)
+      .map((item, idx) => {
+        const title =
+          String(item?.title || item?.name || item?.id || '').trim() || `Record ${idx + 1}`;
+        return resultCard(title, objectSummaryTable(item));
+      })
+      .join('');
+  }
+
+  if (payload && typeof payload === 'object') {
+    return resultCard('Result', objectSummaryTable(payload));
+  }
+  return resultCard('Result', `<p>${esc(toShortLine(payload))}</p>`);
 }
 
 function sentenceCount(text) {
@@ -640,7 +673,7 @@ function setPrettyOutput(elId, mode, payload, context = {}) {
   const el = document.getElementById(elId);
   if (!el) return;
   const html = renderModePayload(mode, payload, context);
-  el.innerHTML = `${html}${rawJsonDetails(payload)}`;
+  el.innerHTML = html;
 }
 
 /* ---------- LinkedIn Preview ---------- */
@@ -1292,8 +1325,8 @@ rewriteForm?.addEventListener('submit', async (e) => {
       <div class="card"><h3>Rewritten</h3><pre>${esc(response.rewritten_version)}</pre></div>
       <div class="card"><h3>Concise</h3><pre>${esc(response.more_concise)}</pre></div>
       <div class="card"><h3>Punchy</h3><pre>${esc(response.more_punchy)}</pre></div>
-      <div class="card"><h3>Scores</h3><pre>${esc(JSON.stringify(response.scores || {}, null, 2))}</pre></div>
-      <div class="card"><h3>Hooks</h3><pre>${esc(JSON.stringify(response.stronger_hooks || [], null, 2))}</pre></div>
+      <div class="card"><h3>Scores</h3>${scorePills(response.scores || {}) || '<p class="muted">No scores available</p>'}</div>
+      <div class="card"><h3>Hooks</h3><div class="prose">${listHtml(response.stronger_hooks || [])}</div></div>
     `;
   }
 });
@@ -1323,6 +1356,241 @@ expandForm?.addEventListener('submit', async (e) => {
 });
 
 /* ---------- Planner ---------- */
+const plannerState = {
+  posts: [],
+  search: '',
+};
+
+const plannerColumns = {
+  all: document.getElementById('plannerColAll'),
+  ideas: document.getElementById('plannerColIdeas'),
+  draft: document.getElementById('plannerColDraft'),
+  scheduled: document.getElementById('plannerColScheduled'),
+  published: document.getElementById('plannerColPublished'),
+};
+
+const plannerCounts = {
+  all: document.getElementById('plannerCountAll'),
+  ideas: document.getElementById('plannerCountIdeas'),
+  draft: document.getElementById('plannerCountDraft'),
+  scheduled: document.getElementById('plannerCountScheduled'),
+  published: document.getElementById('plannerCountPublished'),
+};
+
+function normalizePlannerStatus(status) {
+  const s = String(status || 'ideas').toLowerCase();
+  if (s === 'draft' || s === 'scheduled' || s === 'published') return s;
+  return 'ideas';
+}
+
+function plannerPostId(status, title, dateLabel = '') {
+  return `${status}|${String(title || '').trim().toLowerCase()}|${String(dateLabel || '').trim()}`;
+}
+
+function plannerShort(text, max = 130) {
+  const value = String(text || '').trim().replace(/\s+/g, ' ');
+  if (!value) return '';
+  if (value.length <= max) return value;
+  return `${value.slice(0, max - 1)}…`;
+}
+
+function plannerCardHtml(post) {
+  return `<article class="planner-post-card">
+    <h4>${esc(post.title)}</h4>
+    <p>${esc(plannerShort(post.excerpt || ''))}</p>
+    <div class="planner-post-meta">${esc(post.meta_label || 'Created')}${post.date_label ? ` · ${esc(post.date_label)}` : ''}</div>
+  </article>`;
+}
+
+function addPlannerPosts(items) {
+  if (!Array.isArray(items) || !items.length) return;
+  const merged = new Map(plannerState.posts.map((p) => [p.id, p]));
+  items.forEach((item) => {
+    const title = String(item?.title || '').trim();
+    if (!title) return;
+    const status = normalizePlannerStatus(item?.status);
+    const dateLabel = String(item?.date_label || '').trim();
+    const post = {
+      id: plannerPostId(status, title, dateLabel),
+      title,
+      excerpt: String(item?.excerpt || '').trim(),
+      status,
+      meta_label: String(item?.meta_label || 'Created').trim(),
+      date_label: dateLabel,
+    };
+    merged.set(post.id, post);
+  });
+  plannerState.posts = Array.from(merged.values());
+}
+
+function filteredPlannerPosts() {
+  const q = String(plannerState.search || '').trim().toLowerCase();
+  if (!q) return plannerState.posts;
+  return plannerState.posts.filter((post) => {
+    const hay = `${post.title} ${post.excerpt} ${post.meta_label} ${post.date_label}`.toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function renderPlannerBoard() {
+  const all = filteredPlannerPosts();
+  const byStatus = {
+    all,
+    ideas: all.filter((p) => p.status === 'ideas'),
+    draft: all.filter((p) => p.status === 'draft'),
+    scheduled: all.filter((p) => p.status === 'scheduled'),
+    published: all.filter((p) => p.status === 'published'),
+  };
+
+  ['all', 'ideas', 'draft', 'scheduled', 'published'].forEach((status) => {
+    const list = byStatus[status] || [];
+    const countEl = plannerCounts[status];
+    const colEl = plannerColumns[status];
+    if (countEl) countEl.textContent = String(list.length);
+    if (!colEl) return;
+
+    if (!list.length) {
+      colEl.innerHTML = `<div class="planner-empty">Drop a card here or add one below.</div>`;
+      return;
+    }
+    colEl.innerHTML = list.map((post) => plannerCardHtml(post)).join('');
+  });
+}
+
+function ingestPlannerPayload(mode, payload, request = {}) {
+  if (!payload || payload.error) return;
+  const posts = [];
+
+  if (mode === 'plan') {
+    const seeds = Array.isArray(payload.posts) ? payload.posts : [];
+    seeds.forEach((seed, idx) => {
+      posts.push({
+        title: String(seed),
+        excerpt: Array.isArray(payload.content_angles) ? String(payload.content_angles[idx % payload.content_angles.length] || '') : '',
+        status: idx < 2 ? 'draft' : 'ideas',
+        meta_label: idx < 2 ? 'Draft' : 'Created',
+      });
+    });
+    const calendar = Array.isArray(payload.content_calendar) ? payload.content_calendar : [];
+    calendar.slice(0, 40).forEach((entry) => {
+      posts.push({
+        title: String(entry?.title_seed || `${request.topic || 'Post'} slot ${entry?.slot || ''}`),
+        excerpt: String(entry?.theme || ''),
+        status: 'scheduled',
+        meta_label: 'Scheduled',
+        date_label: String(entry?.date || ''),
+      });
+    });
+  }
+
+  if (mode === 'topic_map') {
+    const angles = Array.isArray(payload.content_angles) ? payload.content_angles : [];
+    angles.forEach((angle) =>
+      posts.push({
+        title: String(angle),
+        excerpt: `Angle for ${String(request.topic || 'topic')}`,
+        status: 'ideas',
+        meta_label: 'Idea',
+      }),
+    );
+  }
+
+  if (mode === 'calendar') {
+    const calendar = Array.isArray(payload.content_calendar) ? payload.content_calendar : [];
+    calendar.forEach((entry) =>
+      posts.push({
+        title: String(entry?.title_seed || `Post ${entry?.slot || ''}`),
+        excerpt: String(entry?.theme || ''),
+        status: 'scheduled',
+        meta_label: 'Scheduled',
+        date_label: String(entry?.date || ''),
+      }),
+    );
+  }
+
+  if (mode === 'repurpose') {
+    const variants = Array.isArray(payload.variants) ? payload.variants : [];
+    variants.forEach((variant) =>
+      posts.push({
+        title: String(variant?.title_seed || `Repurpose for ${variant?.target_platform || 'target'}`),
+        excerpt: String(variant?.opening_seed || ''),
+        status: 'draft',
+        meta_label: 'Draft',
+      }),
+    );
+  }
+
+  if (mode === 'style_mix' && payload.final_text) {
+    posts.push({
+      title: String(request.topic || 'Style mix draft'),
+      excerpt: String(payload.final_text || ''),
+      status: 'draft',
+      meta_label: 'Draft',
+    });
+  }
+
+  addPlannerPosts(posts);
+  renderPlannerBoard();
+}
+
+function seedPlannerPosts() {
+  addPlannerPosts([
+    {
+      title: 'Job hunting tips for graduates',
+      excerpt: "Most grad applications get ignored. Not because the candidate isn't good.",
+      status: 'ideas',
+      meta_label: 'Created',
+      date_label: 'Mar 8',
+    },
+    {
+      title: '7-second resume scan myth',
+      excerpt: 'What recruiters actually see first and how to win that moment.',
+      status: 'scheduled',
+      meta_label: 'Scheduled',
+      date_label: 'Dec 2',
+    },
+    {
+      title: 'Why most people fail interviews',
+      excerpt: "You're treating interviews like a pop quiz. That is the problem.",
+      status: 'published',
+      meta_label: 'Published',
+      date_label: 'Feb 12',
+    },
+  ]);
+  renderPlannerBoard();
+}
+
+document.getElementById('plannerSearchInput')?.addEventListener('input', (e) => {
+  const value = e?.target && 'value' in e.target ? e.target.value : '';
+  plannerState.search = String(value || '');
+  renderPlannerBoard();
+});
+
+document.querySelectorAll('.planner-add-card').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const desired = normalizePlannerStatus(btn.getAttribute('data-post-status') || 'ideas');
+    const status = desired === 'ideas' && btn.getAttribute('data-post-status') === 'all' ? 'ideas' : desired;
+    const title = window.prompt('Post title');
+    if (!title || !String(title).trim()) return;
+    const excerpt = window.prompt('Short description (optional)') || '';
+    addPlannerPosts([
+      {
+        title: String(title).trim(),
+        excerpt: String(excerpt).trim(),
+        status,
+        meta_label: status === 'published' ? 'Published' : status === 'scheduled' ? 'Scheduled' : 'Created',
+      },
+    ]);
+    renderPlannerBoard();
+  });
+});
+
+document.getElementById('plannerLabelsBtn')?.addEventListener('click', () => {
+  appendChatMessage('system', 'Labels are coming next. For now, use search to filter posts quickly.');
+});
+
+seedPlannerPosts();
+
 const planForm = document.getElementById('planForm');
 planForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -1331,6 +1599,7 @@ planForm?.addEventListener('submit', async (e) => {
   payload.posts_per_week = Number(payload.posts_per_week || '3');
   const out = await postJson('/api/plan', payload);
   setPrettyOutput('planOutput', 'plan', out);
+  ingestPlannerPayload('plan', out, payload);
 });
 
 const topicMapForm = document.getElementById('topicMapForm');
@@ -1339,6 +1608,7 @@ topicMapForm?.addEventListener('submit', async (e) => {
   const payload = formToObj(topicMapForm);
   const out = await postJson('/api/plan/topic-map', payload);
   setPrettyOutput('planOutput', 'topic_map', out);
+  ingestPlannerPayload('topic_map', out, payload);
 });
 
 const calendarForm = document.getElementById('calendarForm');
@@ -1349,6 +1619,7 @@ calendarForm?.addEventListener('submit', async (e) => {
   payload.posts_per_week = Number(payload.posts_per_week || '3');
   const out = await postJson('/api/plan/calendar', payload);
   setPrettyOutput('planOutput', 'calendar', out);
+  ingestPlannerPayload('calendar', out, payload);
 });
 
 const repurposeForm = document.getElementById('repurposeForm');
@@ -1361,6 +1632,7 @@ repurposeForm?.addEventListener('submit', async (e) => {
     .filter(Boolean);
   const out = await postJson('/api/repurpose', payload);
   setPrettyOutput('planOutput', 'repurpose', out);
+  ingestPlannerPayload('repurpose', out, payload);
 });
 
 const styleMixForm = document.getElementById('styleMixForm');
@@ -1398,6 +1670,7 @@ styleMixForm?.addEventListener('submit', async (e) => {
     creator_weights: creatorWeights,
   });
   setPrettyOutput('planOutput', 'style_mix', out, { topic: payload.topic, model: payload.model });
+  ingestPlannerPayload('style_mix', out, payload);
   const draft = out?.final_text || '';
   if (draft) {
     const scoreSummary = out?.output?.scores ? `Scores: ${JSON.stringify(out.output.scores)}` : 'Creator style mix applied';
