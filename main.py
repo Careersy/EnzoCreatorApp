@@ -1,8 +1,8 @@
-"""Vercel/FastAPI entrypoint.
+from fastapi import FastAPI
 
-This file exists so hosting platforms that auto-detect `main.py`
-can import a top-level `app` object directly.
-"""
+app = FastAPI()
 
-from creator_intelligence_app.app.main import app
 
+@app.get("/")
+def read_root() -> dict[str, str]:
+    return {"Python": "on Vercel"}
