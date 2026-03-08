@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const data = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''/Users/maestro/LinkedIN analysis/knowledge-graph.json'', ''utf8''\\)\\); const nodes = Object.values\\(data.nodes\\).flat\\(\\).length; console.log\\(''JSON valid:'', nodes, ''nodes,'', data.edges.length, ''edges''\\)\")",
+      "Bash(open \"/Users/maestro/LinkedIN analysis/knowledge-graph.html\")",
+      "Bash(python3 -c \"import json; data = json.load\\(open\\(''/Users/maestro/LinkedIN analysis/knowledge-graph.json''\\)\\); print\\(f''✅ Valid JSON — {len\\([n for items in data[\"\"nodes\"\"].values\\(\\) for n in items]\\)} nodes, {len\\(data[\"\"edges\"\"]\\)} edges''\\)\")",
+      "Bash(python3 -c \":*)"
+    ]
+  }
+}

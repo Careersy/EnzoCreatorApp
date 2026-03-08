@@ -1,0 +1,12 @@
+services:
+  creator-intelligence-app:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      - APP_HOST=0.0.0.0
+      - APP_PORT=8000
+      - LOCAL_PRIVATE_MODE=true
+      - CREATOR_GRAPH_PATH=/workspace/knowledge-graph.json
+    volumes:
+      - ./:/workspace

@@ -1,0 +1,1020 @@
+{
+  "meta": {
+    "title": "Careersy Content Generation System — Creator Knowledge Graph",
+    "version": "1.0",
+    "created": "2026-03-08",
+    "description": "Cross-creator analysis of 6 LinkedIn career content creators. First layer for the Careersy content generation system.",
+    "total_nodes": 80,
+    "total_edges": 208
+  },
+  "nodes": {
+    "creators": [
+      {
+        "id": "creator_broda",
+        "type": "Creator",
+        "name": "Adam Broda",
+        "linkedin": "adamrbroda",
+        "followers": 500935,
+        "posting_frequency": "1-2x/day",
+        "voice": "Confident, data-driven, coach-authority. Uses bold claims backed by market data.",
+        "positioning": "The career cheat-code guy for $150K-$350K roles",
+        "headline": "Career Coach | Helping Professionals Land $150K-$350K Roles",
+        "core_thesis": "The job market is rigged — but I'll show you the cheat codes",
+        "avg_reactions": 800,
+        "avg_comments": 150,
+        "avg_reposts": 50,
+        "monetization_model": "high_ticket_coaching"
+      },
+      {
+        "id": "creator_tegze",
+        "type": "Creator",
+        "name": "Jan Tegze",
+        "linkedin": "jantegze",
+        "followers": 278269,
+        "posting_frequency": "1x/day",
+        "voice": "Recruiter-candour, insider tone, educational. European pragmatism.",
+        "positioning": "The recruiter who tells candidates what recruiters won't",
+        "headline": "Director of Talent Acquisition @ Tricentis | Author | Speaker",
+        "core_thesis": "I'm a recruiter telling you what recruiters won't tell you",
+        "avg_reactions": 200,
+        "avg_comments": 30,
+        "avg_reposts": 15,
+        "monetization_model": "newsletter_growth"
+      },
+      {
+        "id": "creator_perry",
+        "type": "Creator",
+        "name": "Reno Perry",
+        "linkedin": "renoperry",
+        "followers": 567678,
+        "posting_frequency": "1x/day",
+        "voice": "Authority, direct, system-oriented. Every post is a mini-framework.",
+        "positioning": "The 6-figure job search strategist",
+        "headline": "Career Coach | Job Search Strategist",
+        "core_thesis": "6-figure offers don't go to the best candidates — they go to the best-prepared",
+        "avg_reactions": 533,
+        "avg_comments": 144,
+        "avg_reposts": 63,
+        "monetization_model": "high_ticket_coaching"
+      },
+      {
+        "id": "creator_dilber",
+        "type": "Creator",
+        "name": "Bonnie Dilber",
+        "linkedin": "bonnie-dilber",
+        "followers": 490000,
+        "posting_frequency": "1-2x/day",
+        "voice": "Casual, direct, educator-instincts. Uses 'y'all'. Treats audience as peers.",
+        "positioning": "The recruiter who tells you what HR doesn't want you to know",
+        "headline": "Recruiting Leader @ Zapier | Former Educator",
+        "core_thesis": "I'll tell you the truth about recruiting that HR doesn't want you to know",
+        "avg_reactions": 117,
+        "avg_comments": 33,
+        "avg_reposts": 3,
+        "monetization_model": "brand_partnerships"
+      },
+      {
+        "id": "creator_belcak",
+        "type": "Creator",
+        "name": "Austin Belcak",
+        "linkedin": "abelcak",
+        "followers": 1500000,
+        "posting_frequency": "2x/day",
+        "voice": "Confident, systematic, coach-like. Everything is a framework or script.",
+        "positioning": "The anti-application guy — get hired without applying online",
+        "headline": "Founder @ Cultivated Culture | I Teach People How To Land Amazing Jobs Without Applying Online",
+        "core_thesis": "Stop applying online. Period.",
+        "avg_reactions": 536,
+        "avg_comments": 150,
+        "avg_reposts": 40,
+        "monetization_model": "digital_products_courses"
+      },
+      {
+        "id": "creator_harding",
+        "type": "Creator",
+        "name": "Lee Harding",
+        "linkedin": "leeharding1",
+        "followers": 120000,
+        "posting_frequency": "1x/day",
+        "voice": "Sharp, funny, no-nonsense. British directness. Anti-guru energy.",
+        "positioning": "The honest introverted recruiter who doesn't sugarcoat it",
+        "headline": "The Introverted Recruiter | Talent Acquisition Director @ Join Talent",
+        "core_thesis": "Most job search advice is rubbish — here's what actually happens",
+        "avg_reactions": 250,
+        "avg_comments": 80,
+        "avg_reposts": 20,
+        "monetization_model": "low_ticket_digital_products"
+      }
+    ],
+    "topics": [
+      {
+        "id": "topic_job_search_tactics",
+        "type": "Topic",
+        "name": "Job Search Tactics & Systems",
+        "description": "Practical frameworks for running an effective job search: applications, tracking, follow-ups, timing"
+      },
+      {
+        "id": "topic_resume_linkedin",
+        "type": "Topic",
+        "name": "Resume & LinkedIn Optimization",
+        "description": "Profile optimization, headline writing, resume formatting, ATS strategies"
+      },
+      {
+        "id": "topic_networking_outreach",
+        "type": "Topic",
+        "name": "Networking & Cold Outreach",
+        "description": "Referral strategies, cold emails, informational interviews, building connections"
+      },
+      {
+        "id": "topic_labor_market_data",
+        "type": "Topic",
+        "name": "Labor Market Data & News",
+        "description": "Job market statistics, hiring trends, layoffs, economic data commentary"
+      },
+      {
+        "id": "topic_ai_future_work",
+        "type": "Topic",
+        "name": "AI & Future of Work",
+        "description": "AI tools for job search, AI's impact on hiring, building AI skills, AI replacing jobs"
+      },
+      {
+        "id": "topic_recruiting_transparency",
+        "type": "Topic",
+        "name": "Recruiting Insider Truths",
+        "description": "Behind-the-curtain recruiting processes, what recruiters actually look at, hiring biases"
+      },
+      {
+        "id": "topic_interview_prep",
+        "type": "Topic",
+        "name": "Interview Preparation",
+        "description": "Behavioral questions, STAR method, negotiation tactics, follow-up emails"
+      },
+      {
+        "id": "topic_salary_negotiation",
+        "type": "Topic",
+        "name": "Salary Negotiation",
+        "description": "Negotiation scripts, benchmark data, counter-offer strategies, total compensation"
+      },
+      {
+        "id": "topic_personal_branding",
+        "type": "Topic",
+        "name": "Personal Branding & Visibility",
+        "description": "Building LinkedIn presence, thought leadership, portfolio strategy, content creation for job seekers"
+      },
+      {
+        "id": "topic_mindset",
+        "type": "Topic",
+        "name": "Mindset & Motivation",
+        "description": "Overcoming rejection, imposter syndrome, career confidence, persistence"
+      },
+      {
+        "id": "topic_social_proof",
+        "type": "Topic",
+        "name": "Social Proof & Case Studies",
+        "description": "Client success stories, testimonial screenshots, before/after career transformations"
+      },
+      {
+        "id": "topic_cv_screening",
+        "type": "Topic",
+        "name": "CV Screening & ATS Reality",
+        "description": "How CVs are actually reviewed, ATS myths debunked, what gets past the first filter"
+      }
+    ],
+    "templates": [
+      {
+        "id": "template_data_hook",
+        "type": "Template",
+        "name": "Data/News Hook",
+        "structure": "Lead with specific stat or news event → Add insider perspective → CTA",
+        "why_it_works": "Combines timeliness with authority. Reader gets news + expert interpretation in one post.",
+        "example_opener": "The job market lost another 92k jobs in February..."
+      },
+      {
+        "id": "template_numbered_list",
+        "type": "Template",
+        "name": "Numbered List / Micro-Guide",
+        "structure": "Problem headline → 3-7 numbered actionable items → Each with copy-paste script/template → CTA",
+        "why_it_works": "Maximum actionability per post. Readers can implement same-day. High save/bookmark rate.",
+        "example_opener": "5 Steps To A Job-Winning LinkedIn Headline:"
+      },
+      {
+        "id": "template_contrarian_reframe",
+        "type": "Template",
+        "name": "Contrarian Reframe",
+        "structure": "Hot take against consensus → Invite disagreement → Numbered reasoning → CTA",
+        "why_it_works": "Pattern interrupt. Generates debate in comments. Algorithm rewards controversy.",
+        "example_opener": "I don't really buy that companies are laying people off 'because of AI'..."
+      },
+      {
+        "id": "template_insider_reveal",
+        "type": "Template",
+        "name": "Insider Reveal",
+        "structure": "\"Here's what actually happens when...\" → Step-by-step behind-the-scenes → Actionable takeaway",
+        "why_it_works": "Information asymmetry is powerful. Candidates desperately want to know what happens on the other side.",
+        "example_opener": "I've reviewed 3,000+ resumes this past year..."
+      },
+      {
+        "id": "template_social_proof_story",
+        "type": "Template",
+        "name": "Social Proof Story",
+        "structure": "Screenshot of client DM/email/result → Brief context → \"Here's what they did\" → CTA",
+        "why_it_works": "Social proof is the most persuasive format. Shows real results, not theory.",
+        "example_opener": "Just got this message from a client who landed at Google..."
+      },
+      {
+        "id": "template_build_in_public",
+        "type": "Template",
+        "name": "Build-in-Public Diary",
+        "structure": "Personal action taken → Tag companies/people → Share learning → Invite others to join",
+        "why_it_works": "Makes complex topics approachable. Positions creator as relatable learner, not distant expert.",
+        "example_opener": "I built my first skill in Claude Code yesterday!"
+      },
+      {
+        "id": "template_myth_buster",
+        "type": "Template",
+        "name": "Myth-Buster",
+        "structure": "Name common belief → Explain why it's wrong from experience → Give actual reality → CTA",
+        "why_it_works": "Frustration-driven engagement. People WANT to believe the system is broken and share when validated.",
+        "example_opener": "You don't need to 'beat the ATS'..."
+      },
+      {
+        "id": "template_authority_opener",
+        "type": "Template",
+        "name": "Authority Opener",
+        "structure": "Credential/experience claim → Bold statement → Evidence/framework → CTA",
+        "why_it_works": "Establishes trust immediately. Reader knows why they should listen before the advice begins.",
+        "example_opener": "I've coached 500+ job seekers this year. Here's what separates the ones who land offers..."
+      }
+    ],
+    "monetization_models": [
+      {
+        "id": "model_high_ticket_coaching",
+        "type": "MonetizationModel",
+        "name": "High-Ticket Coaching",
+        "price_range": "$3,000 - $10,000+",
+        "description": "Free content → book a call → discovery session → 1:1 or group coaching packages. High revenue per client, limited scale.",
+        "conversion_path": "Post → CTA → Typeform/Calendly → Discovery Call → Enrollment"
+      },
+      {
+        "id": "model_digital_products",
+        "type": "MonetizationModel",
+        "name": "Low-Ticket Digital Products",
+        "price_range": "$29 - $647",
+        "description": "Free content → email list → self-serve courses, tools, templates. High volume, heavily automated. Scales without creator time.",
+        "conversion_path": "Post → Free Resource → Email Sequence → Product Purchase"
+      },
+      {
+        "id": "model_brand_partnerships",
+        "type": "MonetizationModel",
+        "name": "Brand Partnerships",
+        "price_range": "Variable (audience-dependent)",
+        "description": "Build large audience → brands pay for sponsored content, integrations, endorsements. Creator doesn't sell to audience directly.",
+        "conversion_path": "Content → Audience Growth → Brand Deal Inquiry → Sponsored Post"
+      }
+    ],
+    "ctas": [
+      {
+        "id": "cta_book_appointment",
+        "type": "CTA",
+        "name": "Book an Appointment",
+        "mechanism": "Typeform/Calendly link in every post and bio",
+        "placement": "End of post + comments + profile header"
+      },
+      {
+        "id": "cta_download_resource",
+        "type": "CTA",
+        "name": "Download Free Resource",
+        "mechanism": "Gated PDF/template requiring email signup",
+        "placement": "End of post with specific resource name"
+      },
+      {
+        "id": "cta_newsletter_signup",
+        "type": "CTA",
+        "name": "Newsletter Signup",
+        "mechanism": "Subscribe to weekly/bi-weekly newsletter",
+        "placement": "Bio + selected posts"
+      },
+      {
+        "id": "cta_linktree",
+        "type": "CTA",
+        "name": "Linktree Hub",
+        "mechanism": "Single link aggregating all offers, newsletter, social links",
+        "placement": "Every post footer"
+      },
+      {
+        "id": "cta_comment_trigger",
+        "type": "CTA",
+        "name": "Comment-Triggered Auto-DM",
+        "mechanism": "\"Comment [KEYWORD] and I'll send you the guide\" → StanAutoDM delivers resource",
+        "placement": "End of post + video CTA"
+      },
+      {
+        "id": "cta_branded_infographic",
+        "type": "CTA",
+        "name": "Branded Infographic CTA",
+        "mechanism": "Infographic with creator branding includes CTA as last slide or watermark",
+        "placement": "Embedded in post media"
+      }
+    ],
+    "platforms": [
+      {
+        "id": "platform_linkedin",
+        "type": "Platform",
+        "name": "LinkedIn",
+        "platform_type": "social"
+      },
+      {
+        "id": "platform_tiktok",
+        "type": "Platform",
+        "name": "TikTok",
+        "platform_type": "social"
+      },
+      {
+        "id": "platform_instagram",
+        "type": "Platform",
+        "name": "Instagram",
+        "platform_type": "social"
+      },
+      {
+        "id": "platform_newsletter",
+        "type": "Platform",
+        "name": "Newsletter / Substack",
+        "platform_type": "owned"
+      },
+      {
+        "id": "platform_podcast",
+        "type": "Platform",
+        "name": "Podcast",
+        "platform_type": "owned"
+      },
+      {
+        "id": "platform_website",
+        "type": "Platform",
+        "name": "Website / Blog",
+        "platform_type": "owned"
+      }
+    ],
+    "products": [
+      {
+        "id": "product_broda_coaching",
+        "type": "Product",
+        "name": "Career Coaching ($150K-$350K roles)",
+        "price": "$3,000-$10,000+",
+        "creator": "creator_broda"
+      },
+      {
+        "id": "product_perry_coaching",
+        "type": "Product",
+        "name": "Job Search Coaching",
+        "price": "$3,000-$10,000+",
+        "creator": "creator_perry"
+      },
+      {
+        "id": "product_tegze_newsletter",
+        "type": "Product",
+        "name": "Talent Spotlight Newsletter",
+        "price": "Free (monetized via sponsors)",
+        "creator": "creator_tegze"
+      },
+      {
+        "id": "product_belcak_djs",
+        "type": "Product",
+        "name": "Dream Job System Course",
+        "price": "$647",
+        "creator": "creator_belcak"
+      },
+      {
+        "id": "product_belcak_tools",
+        "type": "Product",
+        "name": "Resume Builder + Job Tracker Tools",
+        "price": "$37-$97",
+        "creator": "creator_belcak"
+      },
+      {
+        "id": "product_belcak_newsletter",
+        "type": "Product",
+        "name": "Cultivated Culture Newsletter",
+        "price": "Free (funnel to paid)",
+        "creator": "creator_belcak"
+      },
+      {
+        "id": "product_harding_cv_reviewer",
+        "type": "Product",
+        "name": "AI CV Reviewer",
+        "price": "£29",
+        "creator": "creator_harding"
+      },
+      {
+        "id": "product_harding_playbook",
+        "type": "Product",
+        "name": "Complete Job Search System",
+        "price": "£29",
+        "creator": "creator_harding"
+      },
+      {
+        "id": "product_harding_newsletter",
+        "type": "Product",
+        "name": "The Introverted Recruiter Newsletter",
+        "price": "Free (11K+ subscribers)",
+        "creator": "creator_harding"
+      },
+      {
+        "id": "product_dilber_brand_deals",
+        "type": "Product",
+        "name": "Brand Partnership Content",
+        "price": "Variable",
+        "creator": "creator_dilber"
+      }
+    ],
+    "patterns": [
+      {
+        "id": "pattern_one_idea",
+        "type": "Pattern",
+        "name": "Own ONE Contrarian Idea",
+        "description": "Every top creator owns a single contrarian thesis that all content flows from. This idea is repeatable, ownable, and instantly recognizable.",
+        "careersy_implication": "Eli needs ONE idea: 'The ANZ job market doesn't reward the best candidates — it punishes the ones who don't know the game.' Maps to the Invisible Applicant avatar."
+      },
+      {
+        "id": "pattern_five_templates",
+        "type": "Pattern",
+        "name": "Five Universal Content Templates",
+        "description": "Data Hook, Numbered List, Contrarian Reframe, Insider Reveal, Social Proof Story — every creator uses 3-5 of these in rotation.",
+        "careersy_implication": "Start with Contrarian Reframe and Insider Reveal — they map directly to Careersy audience language from intake calls."
+      },
+      {
+        "id": "pattern_three_models",
+        "type": "Pattern",
+        "name": "Three Monetization Models",
+        "description": "High-ticket coaching (Broda, Perry), low-ticket digital products (Belcak, Harding), brand partnerships (Dilber). Each requires different content volume and audience size.",
+        "careersy_implication": "Careersy runs coaching model. Add a $49-$97 AUD tripwire product before coaching upsell to address price sensitivity from intake calls."
+      },
+      {
+        "id": "pattern_cta_every_post",
+        "type": "Pattern",
+        "name": "Standardized CTA on Every Post",
+        "description": "All 6 creators have ONE consistent CTA on every single post. No post goes without a conversion mechanism.",
+        "careersy_implication": "Standardize: 'Comment AUDIT and I'll send you my ANZ resume scorecard' — combines Harding's auto-DM with Perry's booking endgame."
+      },
+      {
+        "id": "pattern_80_15_5",
+        "type": "Pattern",
+        "name": "80/15/5 Value-to-Sell Ratio",
+        "description": "80% pure value posts, 15% soft-sell (case studies, testimonials), 5% direct-sell (launches, enrollment). Nobody leads with the sell.",
+        "careersy_implication": "Use 91 testimonials as Social Proof Story factory — one per week. Remaining posts are pure value."
+      },
+      {
+        "id": "pattern_text_first",
+        "type": "Pattern",
+        "name": "Text-First, Visuals as Scroll-Stoppers",
+        "description": "Text-only posts dominate for engagement. Branded infographics and carousels used as scroll-stoppers. Video growing but optional.",
+        "careersy_implication": "Start with text-only posts (lowest production cost). Add one branded template for infographic posts. Video optional."
+      }
+    ],
+    "style_profiles": [
+      {
+        "id": "style_broda",
+        "type": "StyleProfile",
+        "name": "Adam Broda Style",
+        "creator_ref": "creator_broda",
+        "authority_level": "expert-coach",
+        "emotional_tone": "motivational-urgent",
+        "formality": 6,
+        "confidence": 9,
+        "avg_sentence_length": 12,
+        "fragment_frequency": "high",
+        "question_frequency": "medium",
+        "command_frequency": "high",
+        "punchline_style": "Bold declarative closer. Single punchy sentence as its own paragraph. Often starts with 'The truth is:' or 'Stop doing this.'",
+        "vocabulary_complexity": "simple",
+        "direct_address_frequency": "every-post",
+        "storytelling_frequency": "supporting",
+        "paragraph_style": "ultra-short-1-2-lines",
+        "signature_phrases": ["Here's the truth:", "The cheat code is:", "Nobody tells you this:", "Stop doing this.", "The game is rigged."],
+        "power_words": ["cheat code", "rigged", "game", "proven", "exactly", "mistake", "secret", "landing", "offer"],
+        "metaphor_style": "Gaming/competition metaphors. Job market as a rigged game with cheat codes and hidden rules."
+      },
+      {
+        "id": "style_tegze",
+        "type": "StyleProfile",
+        "name": "Jan Tegze Style",
+        "creator_ref": "creator_tegze",
+        "authority_level": "insider-peer",
+        "emotional_tone": "pragmatic-informative",
+        "formality": 7,
+        "confidence": 7,
+        "avg_sentence_length": 16,
+        "fragment_frequency": "medium",
+        "question_frequency": "medium",
+        "command_frequency": "medium",
+        "punchline_style": "Educational closer. Ends with a practical takeaway or a reframe of the conventional wisdom. Measured, not dramatic.",
+        "vocabulary_complexity": "moderate",
+        "direct_address_frequency": "most-posts",
+        "storytelling_frequency": "supporting",
+        "paragraph_style": "short-2-3-lines",
+        "signature_phrases": ["Here's what recruiters actually see:", "The reality is different:", "What most people miss:", "From a recruiter's perspective:"],
+        "power_words": ["actually", "reality", "behind the scenes", "most people", "overlooked", "strategy", "insight", "perspective"],
+        "metaphor_style": "Behind-the-curtain metaphors. Recruiting as a hidden process with insider knowledge."
+      },
+      {
+        "id": "style_perry",
+        "type": "StyleProfile",
+        "name": "Reno Perry Style",
+        "creator_ref": "creator_perry",
+        "authority_level": "systems-authority",
+        "emotional_tone": "direct-empowering",
+        "formality": 6,
+        "confidence": 9,
+        "avg_sentence_length": 11,
+        "fragment_frequency": "high",
+        "question_frequency": "low",
+        "command_frequency": "high",
+        "punchline_style": "Framework-ending authority statement. Posts conclude with a system or repeatable process. The closer is always actionable, never philosophical.",
+        "vocabulary_complexity": "simple",
+        "direct_address_frequency": "every-post",
+        "storytelling_frequency": "rare",
+        "paragraph_style": "ultra-short-1-2-lines",
+        "signature_phrases": ["Here's the system:", "Follow this exact process:", "6-figure offers go to the prepared.", "Most candidates do X. Top candidates do Y."],
+        "power_words": ["system", "framework", "process", "exactly", "step-by-step", "6-figure", "prepared", "top candidates", "offer"],
+        "metaphor_style": "Military/sports preparation metaphors. Job search as a campaign that rewards the best-prepared, not the best-qualified."
+      },
+      {
+        "id": "style_dilber",
+        "type": "StyleProfile",
+        "name": "Bonnie Dilber Style",
+        "creator_ref": "creator_dilber",
+        "authority_level": "contrarian-educator",
+        "emotional_tone": "casual-inclusive",
+        "formality": 3,
+        "confidence": 7,
+        "avg_sentence_length": 14,
+        "fragment_frequency": "medium",
+        "question_frequency": "high",
+        "command_frequency": "low",
+        "punchline_style": "Invitational closer. Ends with a question to the audience or an invitation to share their experience. Builds community, not authority.",
+        "vocabulary_complexity": "simple",
+        "direct_address_frequency": "every-post",
+        "storytelling_frequency": "primary-mode",
+        "paragraph_style": "short-2-3-lines",
+        "signature_phrases": ["But logic check me y'all:", "Build in public y'all!", "Here's what I think:", "What do you think?", "Am I wrong here?"],
+        "power_words": ["y'all", "honestly", "actually", "truth", "real talk", "transparency", "build in public", "logic check"],
+        "metaphor_style": "Classroom/learning metaphors. Recruiting as a learning process where everyone is figuring it out together."
+      },
+      {
+        "id": "style_belcak",
+        "type": "StyleProfile",
+        "name": "Austin Belcak Style",
+        "creator_ref": "creator_belcak",
+        "authority_level": "expert-coach",
+        "emotional_tone": "confident-systematic",
+        "formality": 5,
+        "confidence": 10,
+        "avg_sentence_length": 10,
+        "fragment_frequency": "high",
+        "question_frequency": "medium",
+        "command_frequency": "high",
+        "punchline_style": "Conversion closer. Every post ends with a clear next step — download this, get the guide, follow for more. The punchline IS the CTA.",
+        "vocabulary_complexity": "simple",
+        "direct_address_frequency": "every-post",
+        "storytelling_frequency": "supporting",
+        "paragraph_style": "ultra-short-1-2-lines",
+        "signature_phrases": ["Stop applying online.", "Here's the exact script:", "I used this to land a job at Google/Microsoft/etc.", "Most people do X. Do this instead:"],
+        "power_words": ["exact", "script", "template", "step-by-step", "proven", "land", "dream job", "without applying", "referral"],
+        "metaphor_style": "Hacking/shortcut metaphors. Job search as a system to be hacked with the right scripts and templates."
+      },
+      {
+        "id": "style_harding",
+        "type": "StyleProfile",
+        "name": "Lee Harding Style",
+        "creator_ref": "creator_harding",
+        "authority_level": "challenger",
+        "emotional_tone": "sharp-irreverent",
+        "formality": 3,
+        "confidence": 8,
+        "avg_sentence_length": 9,
+        "fragment_frequency": "high",
+        "question_frequency": "high",
+        "command_frequency": "medium",
+        "punchline_style": "Mic-drop closer. Short, punchy final line that reframes everything. Often sarcastic or blunt. Designed to be screenshot-worthy.",
+        "vocabulary_complexity": "simple",
+        "direct_address_frequency": "every-post",
+        "storytelling_frequency": "supporting",
+        "paragraph_style": "ultra-short-1-2-lines",
+        "signature_phrases": ["Hot take:", "Unpopular opinion:", "The truth nobody wants to hear:", "Comment CV and I'll send you the guide."],
+        "power_words": ["rubbish", "truth", "nobody", "actually", "myth", "reality", "hot take", "unpopular"],
+        "metaphor_style": "Debunking/myth-busting metaphors. Job search advice industry as snake oil that needs exposing."
+      }
+    ],
+    "hook_types": [
+      {
+        "id": "hook_contrarian",
+        "type": "HookType",
+        "name": "Contrarian Statement",
+        "mechanism": "Opens with a bold claim that contradicts common wisdom. Triggers cognitive dissonance — reader MUST keep reading to resolve the tension.",
+        "structure": "[Bold claim against consensus]. Here's why: / But here's the truth:",
+        "example_openers": ["I don't really buy that companies are laying people off 'because of AI'.", "Stop applying online. Period.", "Most job search advice is rubbish."],
+        "avg_engagement_multiplier": 1.5
+      },
+      {
+        "id": "hook_data_shock",
+        "type": "HookType",
+        "name": "Data/Stat Shock",
+        "mechanism": "Leads with a surprising, specific number that creates urgency or challenges assumptions. The specificity signals authority.",
+        "structure": "[Specific number/stat that surprises]. Here's what this means for you:",
+        "example_openers": ["The job market lost another 92k jobs in February.", "I've reviewed 3,000+ resumes this past year. Only 12 made it to the final round.", "97% of resumes get rejected before a human ever sees them."],
+        "avg_engagement_multiplier": 1.3
+      },
+      {
+        "id": "hook_curiosity_gap",
+        "type": "HookType",
+        "name": "Curiosity Gap",
+        "mechanism": "Opens an information loop that can only be closed by reading the full post. Creates cognitive tension via the Zeigarnik effect.",
+        "structure": "[Set up an incomplete scenario]. Here's what they all had in common: / Here's what happened next:",
+        "example_openers": ["I've coached 500+ job seekers this year. Here's what separates the ones who land offers:", "I asked 50 hiring managers one question. Their answers will change how you job search.", "There's one thing every 6-figure candidate does that nobody talks about."],
+        "avg_engagement_multiplier": 1.4
+      },
+      {
+        "id": "hook_problem_statement",
+        "type": "HookType",
+        "name": "Problem Statement",
+        "mechanism": "Names the reader's pain directly. Reader self-selects in because they feel seen. Activates the 'this is about me' response.",
+        "structure": "If you're [experiencing pain], here's what you need to know: / If you're [in situation], stop [common mistake].",
+        "example_openers": ["If you're like me and you were confused about this concept of dogfooding your own product.", "If you've been job searching for 3+ months with no interviews, your resume isn't the problem.", "You're not getting ghosted because you're unqualified. You're getting ghosted because of this:"],
+        "avg_engagement_multiplier": 1.2
+      },
+      {
+        "id": "hook_personal_confession",
+        "type": "HookType",
+        "name": "Personal Confession",
+        "mechanism": "Opens with vulnerability or a personal admission. Breaks the expert-audience barrier. Creates relatability and trust simultaneously.",
+        "structure": "I [did something unexpected / failed at something / changed my mind]. Here's what I learned:",
+        "example_openers": ["I built my first skill in Claude Code yesterday!", "I used to think networking was manipulative. I was wrong.", "I almost quit my career coaching business last year. Here's why I stayed:"],
+        "avg_engagement_multiplier": 1.3
+      },
+      {
+        "id": "hook_list_promise",
+        "type": "HookType",
+        "name": "List Promise",
+        "mechanism": "Promises a specific number of actionable items. Reader knows exactly what they'll get. The number creates a contract — 'read this, get X things.'",
+        "structure": "[Number] [things/steps/mistakes/secrets] to/for [desired outcome]:",
+        "example_openers": ["5 Steps To A Job-Winning LinkedIn Headline:", "7 resume mistakes that get you instantly rejected:", "3 cold email scripts that actually get responses:"],
+        "avg_engagement_multiplier": 1.2
+      }
+    ],
+    "content_frameworks": [
+      {
+        "id": "framework_hpia",
+        "type": "ContentFramework",
+        "name": "Hook-Problem-Insight-Action",
+        "structure": "Hook (1-2 lines) -> Problem statement (2-3 lines) -> Insight/reframe (3-5 lines) -> Actionable steps (numbered) -> CTA",
+        "typical_length": "medium (400-800 words)",
+        "best_for": "Job search tactics, resume optimization, networking strategies — any topic where the reader needs both understanding and next steps",
+        "engagement_pattern": "High save rate. Readers bookmark for the action steps. Comments often ask follow-up questions."
+      },
+      {
+        "id": "framework_hlc",
+        "type": "ContentFramework",
+        "name": "Hook-List-CTA",
+        "structure": "Hook line (1 line) -> Numbered list of 3-7 items (each 1-3 lines with copy-paste templates) -> CTA",
+        "typical_length": "short-medium (200-500 words)",
+        "best_for": "Scripts, templates, step-by-step guides — anything readers can implement immediately",
+        "engagement_pattern": "Highest save rate of all frameworks. Lower comment count but massive reshare value."
+      },
+      {
+        "id": "framework_cer",
+        "type": "ContentFramework",
+        "name": "Claim-Evidence-Reframe",
+        "structure": "Bold contrarian claim (1-2 lines) -> Evidence/reasoning (3-5 numbered points) -> Reframe what reader should do instead -> CTA",
+        "typical_length": "medium (400-700 words)",
+        "best_for": "Myth-busting, challenging conventional wisdom, positioning against competitors",
+        "engagement_pattern": "Highest comment rate. Generates debate and disagreement. Algorithm rewards the controversy."
+      },
+      {
+        "id": "framework_sls",
+        "type": "ContentFramework",
+        "name": "Story-Lesson-System",
+        "structure": "Personal/client story (3-5 lines) -> Key lesson extracted (2-3 lines) -> Systematic takeaway (numbered) -> CTA",
+        "typical_length": "medium (400-600 words)",
+        "best_for": "Case studies, social proof, personal experience posts — anything where narrative drives the insight",
+        "engagement_pattern": "High engagement across all metrics. Story creates emotional investment, system creates practical value."
+      },
+      {
+        "id": "framework_qsr",
+        "type": "ContentFramework",
+        "name": "Question-Stack-Resolution",
+        "structure": "Provocative question (1 line) -> Stack of related questions building tension (3-5 questions) -> Resolution/answer -> CTA",
+        "typical_length": "short (200-400 words)",
+        "best_for": "Engagement-first posts, thought leadership, opinion pieces — when you want maximum comments",
+        "engagement_pattern": "Very high comment rate. Questions invite responses. Works especially well for recruiting transparency topics."
+      }
+    ],
+    "engagement_techniques": [
+      {
+        "id": "technique_curiosity_gap",
+        "type": "EngagementTechnique",
+        "name": "Curiosity Gap",
+        "mechanism": "Opens an information loop in the reader's mind that can only be closed by reading further. Leverages the Zeigarnik effect.",
+        "placement": "Hook line and section transitions. Most effective as the very first sentence.",
+        "example": "I've reviewed 3,000+ resumes this past year. Only 12 made it to the final round. Here's what they all had in common:",
+        "psychological_driver": "Zeigarnik effect — incomplete information creates cognitive tension that demands resolution."
+      },
+      {
+        "id": "technique_pattern_interrupt",
+        "type": "EngagementTechnique",
+        "name": "Pattern Interrupt",
+        "mechanism": "Breaks the expected flow of content with an unexpected statement, question, or format change. Resets the reader's attention clock.",
+        "placement": "Mid-post, typically after 3-4 paragraphs when attention naturally wanes. Also used as opening hook.",
+        "example": "Wait. Read that again. (Used after a key insight to force re-reading.)",
+        "psychological_driver": "Orienting response — novel stimuli trigger automatic attention refocusing."
+      },
+      {
+        "id": "technique_short_paragraph_pacing",
+        "type": "EngagementTechnique",
+        "name": "Ultra-Short Paragraph Pacing",
+        "mechanism": "Every paragraph is 1-3 lines maximum. Single-sentence paragraphs used for emphasis. Creates rapid visual flow that mimics conversation speed.",
+        "placement": "Throughout the entire post. This is a structural rule, not a technique applied at specific moments.",
+        "example": "This is the secret.\n\nNobody will tell you this.\n\nBut the job market doesn't reward the best candidates.\n\nIt rewards the ones who know how to play the game.",
+        "psychological_driver": "Cognitive fluency — short paragraphs reduce perceived effort, making the content feel easier and faster to consume."
+      },
+      {
+        "id": "technique_direct_address",
+        "type": "EngagementTechnique",
+        "name": "Direct Address / 'You' Language",
+        "mechanism": "Speaks directly to the reader using 'you', 'your', and imperative verbs. Creates a 1:1 conversation feeling even in a broadcast medium.",
+        "placement": "Every 2-3 sentences. Especially in hook lines, action steps, and CTAs.",
+        "example": "You're sending 200 applications a month. You're getting zero callbacks. Here's why: your resume is optimized for ATS, not for humans.",
+        "psychological_driver": "Self-referencing effect — people process information more deeply when it feels personally directed at them."
+      },
+      {
+        "id": "technique_open_loop",
+        "type": "EngagementTechnique",
+        "name": "Open Loop / Cliffhanger",
+        "mechanism": "Teases upcoming information without delivering it immediately. Creates forward momentum that pulls the reader through the post.",
+        "placement": "After the hook (before the main content) and before the CTA (to motivate clicking through).",
+        "example": "But here's what nobody realizes... (followed by 2-3 paragraphs of build-up before the actual reveal)",
+        "psychological_driver": "Information gap theory — the discomfort of not-knowing motivates continued engagement."
+      },
+      {
+        "id": "technique_rhetorical_question",
+        "type": "EngagementTechnique",
+        "name": "Rhetorical Question Stack",
+        "mechanism": "Asks 2-4 questions the reader already knows the answer to. Creates a 'yes-ladder' that builds agreement before the main point.",
+        "placement": "Opening hook or mid-post transition. Most effective when stacked in groups of 3.",
+        "example": "Are you tired of applying to 50+ jobs with no response? Do you wonder why you never hear back? Have you considered that your resume might not be the problem?",
+        "psychological_driver": "Consistency principle — once readers mentally say 'yes' to initial questions, they're more likely to agree with the conclusion."
+      }
+    ]
+  },
+  "edges": [
+    {"source": "creator_broda", "target": "topic_job_search_tactics", "type": "COVERS", "share": 40},
+    {"source": "creator_broda", "target": "topic_resume_linkedin", "type": "COVERS", "share": 20},
+    {"source": "creator_broda", "target": "topic_labor_market_data", "type": "COVERS", "share": 15},
+    {"source": "creator_broda", "target": "topic_ai_future_work", "type": "COVERS", "share": 10},
+    {"source": "creator_broda", "target": "topic_mindset", "type": "COVERS", "share": 10},
+    {"source": "creator_broda", "target": "topic_social_proof", "type": "COVERS", "share": 5},
+
+    {"source": "creator_tegze", "target": "topic_job_search_tactics", "type": "COVERS", "share": 35},
+    {"source": "creator_tegze", "target": "topic_ai_future_work", "type": "COVERS", "share": 25},
+    {"source": "creator_tegze", "target": "topic_personal_branding", "type": "COVERS", "share": 20},
+    {"source": "creator_tegze", "target": "topic_recruiting_transparency", "type": "COVERS", "share": 10},
+    {"source": "creator_tegze", "target": "topic_mindset", "type": "COVERS", "share": 5},
+
+    {"source": "creator_perry", "target": "topic_job_search_tactics", "type": "COVERS", "share": 35},
+    {"source": "creator_perry", "target": "topic_mindset", "type": "COVERS", "share": 25},
+    {"source": "creator_perry", "target": "topic_resume_linkedin", "type": "COVERS", "share": 15},
+    {"source": "creator_perry", "target": "topic_networking_outreach", "type": "COVERS", "share": 15},
+    {"source": "creator_perry", "target": "topic_labor_market_data", "type": "COVERS", "share": 10},
+
+    {"source": "creator_dilber", "target": "topic_ai_future_work", "type": "COVERS", "share": 30},
+    {"source": "creator_dilber", "target": "topic_recruiting_transparency", "type": "COVERS", "share": 25},
+    {"source": "creator_dilber", "target": "topic_labor_market_data", "type": "COVERS", "share": 20},
+    {"source": "creator_dilber", "target": "topic_job_search_tactics", "type": "COVERS", "share": 10},
+    {"source": "creator_dilber", "target": "topic_personal_branding", "type": "COVERS", "share": 10},
+
+    {"source": "creator_belcak", "target": "topic_networking_outreach", "type": "COVERS", "share": 30},
+    {"source": "creator_belcak", "target": "topic_resume_linkedin", "type": "COVERS", "share": 25},
+    {"source": "creator_belcak", "target": "topic_job_search_tactics", "type": "COVERS", "share": 20},
+    {"source": "creator_belcak", "target": "topic_personal_branding", "type": "COVERS", "share": 10},
+    {"source": "creator_belcak", "target": "topic_mindset", "type": "COVERS", "share": 10},
+    {"source": "creator_belcak", "target": "topic_social_proof", "type": "COVERS", "share": 5},
+
+    {"source": "creator_harding", "target": "topic_cv_screening", "type": "COVERS", "share": 25},
+    {"source": "creator_harding", "target": "topic_job_search_tactics", "type": "COVERS", "share": 25},
+    {"source": "creator_harding", "target": "topic_recruiting_transparency", "type": "COVERS", "share": 20},
+    {"source": "creator_harding", "target": "topic_interview_prep", "type": "COVERS", "share": 15},
+    {"source": "creator_harding", "target": "topic_salary_negotiation", "type": "COVERS", "share": 10},
+    {"source": "creator_harding", "target": "topic_ai_future_work", "type": "COVERS", "share": 5},
+
+    {"source": "creator_broda", "target": "template_data_hook", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_broda", "target": "template_numbered_list", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_broda", "target": "template_social_proof_story", "type": "USES_TEMPLATE", "frequency": "medium"},
+
+    {"source": "creator_tegze", "target": "template_contrarian_reframe", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_tegze", "target": "template_insider_reveal", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_tegze", "target": "template_data_hook", "type": "USES_TEMPLATE", "frequency": "medium"},
+    {"source": "creator_tegze", "target": "template_numbered_list", "type": "USES_TEMPLATE", "frequency": "medium"},
+
+    {"source": "creator_perry", "target": "template_authority_opener", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_perry", "target": "template_contrarian_reframe", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_perry", "target": "template_insider_reveal", "type": "USES_TEMPLATE", "frequency": "medium"},
+    {"source": "creator_perry", "target": "template_social_proof_story", "type": "USES_TEMPLATE", "frequency": "medium"},
+
+    {"source": "creator_dilber", "target": "template_contrarian_reframe", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_dilber", "target": "template_build_in_public", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_dilber", "target": "template_data_hook", "type": "USES_TEMPLATE", "frequency": "medium"},
+    {"source": "creator_dilber", "target": "template_insider_reveal", "type": "USES_TEMPLATE", "frequency": "medium"},
+
+    {"source": "creator_belcak", "target": "template_numbered_list", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_belcak", "target": "template_contrarian_reframe", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_belcak", "target": "template_social_proof_story", "type": "USES_TEMPLATE", "frequency": "medium"},
+    {"source": "creator_belcak", "target": "template_data_hook", "type": "USES_TEMPLATE", "frequency": "medium"},
+
+    {"source": "creator_harding", "target": "template_myth_buster", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_harding", "target": "template_insider_reveal", "type": "USES_TEMPLATE", "frequency": "high"},
+    {"source": "creator_harding", "target": "template_contrarian_reframe", "type": "USES_TEMPLATE", "frequency": "medium"},
+    {"source": "creator_harding", "target": "template_numbered_list", "type": "USES_TEMPLATE", "frequency": "medium"},
+
+    {"source": "creator_broda", "target": "model_high_ticket_coaching", "type": "MONETIZES_VIA"},
+    {"source": "creator_perry", "target": "model_high_ticket_coaching", "type": "MONETIZES_VIA"},
+    {"source": "creator_belcak", "target": "model_digital_products", "type": "MONETIZES_VIA"},
+    {"source": "creator_harding", "target": "model_digital_products", "type": "MONETIZES_VIA"},
+    {"source": "creator_dilber", "target": "model_brand_partnerships", "type": "MONETIZES_VIA"},
+    {"source": "creator_tegze", "target": "model_digital_products", "type": "MONETIZES_VIA"},
+
+    {"source": "creator_broda", "target": "cta_book_appointment", "type": "HAS_CTA", "placement": "every post + comments"},
+    {"source": "creator_broda", "target": "cta_branded_infographic", "type": "HAS_CTA", "placement": "every post media"},
+    {"source": "creator_perry", "target": "cta_book_appointment", "type": "HAS_CTA", "placement": "every post + bio"},
+    {"source": "creator_perry", "target": "cta_branded_infographic", "type": "HAS_CTA", "placement": "every post media"},
+    {"source": "creator_tegze", "target": "cta_newsletter_signup", "type": "HAS_CTA", "placement": "bio + selected posts"},
+    {"source": "creator_dilber", "target": "cta_linktree", "type": "HAS_CTA", "placement": "every post footer"},
+    {"source": "creator_belcak", "target": "cta_download_resource", "type": "HAS_CTA", "placement": "every post"},
+    {"source": "creator_belcak", "target": "cta_newsletter_signup", "type": "HAS_CTA", "placement": "every post"},
+    {"source": "creator_harding", "target": "cta_comment_trigger", "type": "HAS_CTA", "placement": "every post + video CTA"},
+
+    {"source": "creator_broda", "target": "platform_linkedin", "type": "ACTIVE_ON", "followers": 500935, "role": "primary"},
+    {"source": "creator_tegze", "target": "platform_linkedin", "type": "ACTIVE_ON", "followers": 278269, "role": "primary"},
+    {"source": "creator_tegze", "target": "platform_newsletter", "type": "ACTIVE_ON", "role": "secondary"},
+    {"source": "creator_perry", "target": "platform_linkedin", "type": "ACTIVE_ON", "followers": 567678, "role": "primary"},
+    {"source": "creator_dilber", "target": "platform_linkedin", "type": "ACTIVE_ON", "followers": 490000, "role": "primary"},
+    {"source": "creator_dilber", "target": "platform_tiktok", "type": "ACTIVE_ON", "followers": 86000, "role": "secondary"},
+    {"source": "creator_dilber", "target": "platform_instagram", "type": "ACTIVE_ON", "followers": 16000, "role": "tertiary"},
+    {"source": "creator_dilber", "target": "platform_newsletter", "type": "ACTIVE_ON", "role": "secondary"},
+    {"source": "creator_belcak", "target": "platform_linkedin", "type": "ACTIVE_ON", "followers": 1500000, "role": "primary"},
+    {"source": "creator_belcak", "target": "platform_newsletter", "type": "ACTIVE_ON", "role": "secondary"},
+    {"source": "creator_belcak", "target": "platform_podcast", "type": "ACTIVE_ON", "role": "secondary"},
+    {"source": "creator_belcak", "target": "platform_website", "type": "ACTIVE_ON", "role": "secondary"},
+    {"source": "creator_harding", "target": "platform_linkedin", "type": "ACTIVE_ON", "followers": 120000, "role": "primary"},
+    {"source": "creator_harding", "target": "platform_tiktok", "type": "ACTIVE_ON", "followers": 151000, "role": "co-primary"},
+    {"source": "creator_harding", "target": "platform_newsletter", "type": "ACTIVE_ON", "role": "secondary"},
+
+    {"source": "creator_broda", "target": "product_broda_coaching", "type": "SELLS"},
+    {"source": "creator_perry", "target": "product_perry_coaching", "type": "SELLS"},
+    {"source": "creator_tegze", "target": "product_tegze_newsletter", "type": "SELLS"},
+    {"source": "creator_belcak", "target": "product_belcak_djs", "type": "SELLS"},
+    {"source": "creator_belcak", "target": "product_belcak_tools", "type": "SELLS"},
+    {"source": "creator_belcak", "target": "product_belcak_newsletter", "type": "SELLS"},
+    {"source": "creator_harding", "target": "product_harding_cv_reviewer", "type": "SELLS"},
+    {"source": "creator_harding", "target": "product_harding_playbook", "type": "SELLS"},
+    {"source": "creator_harding", "target": "product_harding_newsletter", "type": "SELLS"},
+    {"source": "creator_dilber", "target": "product_dilber_brand_deals", "type": "SELLS"},
+
+    {"source": "creator_broda", "target": "pattern_one_idea", "type": "EXEMPLIFIES"},
+    {"source": "creator_tegze", "target": "pattern_one_idea", "type": "EXEMPLIFIES"},
+    {"source": "creator_perry", "target": "pattern_one_idea", "type": "EXEMPLIFIES"},
+    {"source": "creator_dilber", "target": "pattern_one_idea", "type": "EXEMPLIFIES"},
+    {"source": "creator_belcak", "target": "pattern_one_idea", "type": "EXEMPLIFIES"},
+    {"source": "creator_harding", "target": "pattern_one_idea", "type": "EXEMPLIFIES"},
+
+    {"source": "creator_broda", "target": "pattern_five_templates", "type": "EXEMPLIFIES"},
+    {"source": "creator_belcak", "target": "pattern_five_templates", "type": "EXEMPLIFIES"},
+    {"source": "creator_harding", "target": "pattern_five_templates", "type": "EXEMPLIFIES"},
+    {"source": "creator_dilber", "target": "pattern_five_templates", "type": "EXEMPLIFIES"},
+    {"source": "creator_perry", "target": "pattern_five_templates", "type": "EXEMPLIFIES"},
+    {"source": "creator_tegze", "target": "pattern_five_templates", "type": "EXEMPLIFIES"},
+
+    {"source": "creator_broda", "target": "pattern_cta_every_post", "type": "EXEMPLIFIES"},
+    {"source": "creator_perry", "target": "pattern_cta_every_post", "type": "EXEMPLIFIES"},
+    {"source": "creator_dilber", "target": "pattern_cta_every_post", "type": "EXEMPLIFIES"},
+    {"source": "creator_belcak", "target": "pattern_cta_every_post", "type": "EXEMPLIFIES"},
+    {"source": "creator_harding", "target": "pattern_cta_every_post", "type": "EXEMPLIFIES"},
+
+    {"source": "creator_broda", "target": "pattern_80_15_5", "type": "EXEMPLIFIES"},
+    {"source": "creator_perry", "target": "pattern_80_15_5", "type": "EXEMPLIFIES"},
+    {"source": "creator_belcak", "target": "pattern_80_15_5", "type": "EXEMPLIFIES"},
+
+    {"source": "creator_broda", "target": "pattern_text_first", "type": "EXEMPLIFIES"},
+    {"source": "creator_perry", "target": "pattern_text_first", "type": "EXEMPLIFIES"},
+    {"source": "creator_dilber", "target": "pattern_text_first", "type": "EXEMPLIFIES"},
+
+    {"source": "template_data_hook", "target": "model_high_ticket_coaching", "type": "FEEDS_INTO", "conversion_path": "Stat-driven authority → trust → booking"},
+    {"source": "template_social_proof_story", "target": "model_high_ticket_coaching", "type": "FEEDS_INTO", "conversion_path": "Client result → desire → booking"},
+    {"source": "template_numbered_list", "target": "model_digital_products", "type": "FEEDS_INTO", "conversion_path": "Micro-guide → want full version → download/purchase"},
+    {"source": "template_contrarian_reframe", "target": "model_brand_partnerships", "type": "FEEDS_INTO", "conversion_path": "Viral debate → massive reach → brand value"},
+    {"source": "template_insider_reveal", "target": "model_high_ticket_coaching", "type": "FEEDS_INTO", "conversion_path": "Insider knowledge → trust → want personalized help"},
+    {"source": "template_myth_buster", "target": "model_digital_products", "type": "FEEDS_INTO", "conversion_path": "Debunk myth → show correct approach → sell the tool"},
+
+    {"source": "topic_job_search_tactics", "target": "topic_resume_linkedin", "type": "OVERLAPS", "strength": "strong"},
+    {"source": "topic_job_search_tactics", "target": "topic_networking_outreach", "type": "OVERLAPS", "strength": "strong"},
+    {"source": "topic_job_search_tactics", "target": "topic_interview_prep", "type": "OVERLAPS", "strength": "strong"},
+    {"source": "topic_recruiting_transparency", "target": "topic_cv_screening", "type": "OVERLAPS", "strength": "strong"},
+    {"source": "topic_ai_future_work", "target": "topic_labor_market_data", "type": "OVERLAPS", "strength": "medium"},
+    {"source": "topic_salary_negotiation", "target": "topic_interview_prep", "type": "OVERLAPS", "strength": "medium"},
+    {"source": "topic_personal_branding", "target": "topic_resume_linkedin", "type": "OVERLAPS", "strength": "medium"},
+    {"source": "topic_mindset", "target": "topic_social_proof", "type": "OVERLAPS", "strength": "weak"},
+
+    {"source": "creator_broda", "target": "style_broda", "type": "HAS_STYLE"},
+    {"source": "creator_tegze", "target": "style_tegze", "type": "HAS_STYLE"},
+    {"source": "creator_perry", "target": "style_perry", "type": "HAS_STYLE"},
+    {"source": "creator_dilber", "target": "style_dilber", "type": "HAS_STYLE"},
+    {"source": "creator_belcak", "target": "style_belcak", "type": "HAS_STYLE"},
+    {"source": "creator_harding", "target": "style_harding", "type": "HAS_STYLE"},
+
+    {"source": "creator_broda", "target": "hook_data_shock", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_broda", "target": "hook_list_promise", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_broda", "target": "hook_curiosity_gap", "type": "USES_HOOK", "frequency": "secondary"},
+
+    {"source": "creator_tegze", "target": "hook_contrarian", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_tegze", "target": "hook_data_shock", "type": "USES_HOOK", "frequency": "secondary"},
+    {"source": "creator_tegze", "target": "hook_problem_statement", "type": "USES_HOOK", "frequency": "secondary"},
+
+    {"source": "creator_perry", "target": "hook_curiosity_gap", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_perry", "target": "hook_contrarian", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_perry", "target": "hook_list_promise", "type": "USES_HOOK", "frequency": "secondary"},
+
+    {"source": "creator_dilber", "target": "hook_contrarian", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_dilber", "target": "hook_personal_confession", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_dilber", "target": "hook_problem_statement", "type": "USES_HOOK", "frequency": "secondary"},
+
+    {"source": "creator_belcak", "target": "hook_list_promise", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_belcak", "target": "hook_contrarian", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_belcak", "target": "hook_data_shock", "type": "USES_HOOK", "frequency": "secondary"},
+
+    {"source": "creator_harding", "target": "hook_contrarian", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_harding", "target": "hook_problem_statement", "type": "USES_HOOK", "frequency": "primary"},
+    {"source": "creator_harding", "target": "hook_personal_confession", "type": "USES_HOOK", "frequency": "secondary"},
+
+    {"source": "creator_broda", "target": "framework_hpia", "type": "FOLLOWS_FRAMEWORK", "frequency": "primary"},
+    {"source": "creator_broda", "target": "framework_hlc", "type": "FOLLOWS_FRAMEWORK", "frequency": "primary"},
+
+    {"source": "creator_tegze", "target": "framework_cer", "type": "FOLLOWS_FRAMEWORK", "frequency": "primary"},
+    {"source": "creator_tegze", "target": "framework_hpia", "type": "FOLLOWS_FRAMEWORK", "frequency": "secondary"},
+
+    {"source": "creator_perry", "target": "framework_hpia", "type": "FOLLOWS_FRAMEWORK", "frequency": "primary"},
+    {"source": "creator_perry", "target": "framework_sls", "type": "FOLLOWS_FRAMEWORK", "frequency": "secondary"},
+
+    {"source": "creator_dilber", "target": "framework_cer", "type": "FOLLOWS_FRAMEWORK", "frequency": "primary"},
+    {"source": "creator_dilber", "target": "framework_qsr", "type": "FOLLOWS_FRAMEWORK", "frequency": "primary"},
+
+    {"source": "creator_belcak", "target": "framework_hlc", "type": "FOLLOWS_FRAMEWORK", "frequency": "primary"},
+    {"source": "creator_belcak", "target": "framework_sls", "type": "FOLLOWS_FRAMEWORK", "frequency": "secondary"},
+
+    {"source": "creator_harding", "target": "framework_cer", "type": "FOLLOWS_FRAMEWORK", "frequency": "primary"},
+    {"source": "creator_harding", "target": "framework_qsr", "type": "FOLLOWS_FRAMEWORK", "frequency": "secondary"},
+
+    {"source": "creator_broda", "target": "technique_curiosity_gap", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_broda", "target": "technique_short_paragraph_pacing", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_broda", "target": "technique_direct_address", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_broda", "target": "technique_open_loop", "type": "EMPLOYS_TECHNIQUE", "frequency": "medium"},
+
+    {"source": "creator_tegze", "target": "technique_direct_address", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_tegze", "target": "technique_pattern_interrupt", "type": "EMPLOYS_TECHNIQUE", "frequency": "medium"},
+    {"source": "creator_tegze", "target": "technique_curiosity_gap", "type": "EMPLOYS_TECHNIQUE", "frequency": "medium"},
+    {"source": "creator_tegze", "target": "technique_short_paragraph_pacing", "type": "EMPLOYS_TECHNIQUE", "frequency": "medium"},
+
+    {"source": "creator_perry", "target": "technique_short_paragraph_pacing", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_perry", "target": "technique_direct_address", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_perry", "target": "technique_open_loop", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_perry", "target": "technique_curiosity_gap", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+
+    {"source": "creator_dilber", "target": "technique_rhetorical_question", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_dilber", "target": "technique_direct_address", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_dilber", "target": "technique_pattern_interrupt", "type": "EMPLOYS_TECHNIQUE", "frequency": "medium"},
+    {"source": "creator_dilber", "target": "technique_short_paragraph_pacing", "type": "EMPLOYS_TECHNIQUE", "frequency": "medium"},
+
+    {"source": "creator_belcak", "target": "technique_short_paragraph_pacing", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_belcak", "target": "technique_direct_address", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_belcak", "target": "technique_curiosity_gap", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_belcak", "target": "technique_open_loop", "type": "EMPLOYS_TECHNIQUE", "frequency": "medium"},
+
+    {"source": "creator_harding", "target": "technique_short_paragraph_pacing", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_harding", "target": "technique_pattern_interrupt", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_harding", "target": "technique_rhetorical_question", "type": "EMPLOYS_TECHNIQUE", "frequency": "high"},
+    {"source": "creator_harding", "target": "technique_direct_address", "type": "EMPLOYS_TECHNIQUE", "frequency": "medium"},
+
+    {"source": "hook_contrarian", "target": "template_contrarian_reframe", "type": "HOOK_FEEDS"},
+    {"source": "hook_contrarian", "target": "template_myth_buster", "type": "HOOK_FEEDS"},
+    {"source": "hook_data_shock", "target": "template_data_hook", "type": "HOOK_FEEDS"},
+    {"source": "hook_curiosity_gap", "target": "template_insider_reveal", "type": "HOOK_FEEDS"},
+    {"source": "hook_curiosity_gap", "target": "template_authority_opener", "type": "HOOK_FEEDS"},
+    {"source": "hook_personal_confession", "target": "template_build_in_public", "type": "HOOK_FEEDS"},
+    {"source": "hook_list_promise", "target": "template_numbered_list", "type": "HOOK_FEEDS"},
+    {"source": "hook_problem_statement", "target": "template_insider_reveal", "type": "HOOK_FEEDS"},
+    {"source": "hook_data_shock", "target": "template_social_proof_story", "type": "HOOK_FEEDS"},
+
+    {"source": "style_broda", "target": "style_perry", "type": "STYLE_SIMILARITY", "similarity_score": 82, "shared_traits": ["ultra-short paragraphs", "high confidence", "command-heavy", "simple vocabulary", "systems thinking"]},
+    {"source": "style_broda", "target": "style_belcak", "type": "STYLE_SIMILARITY", "similarity_score": 78, "shared_traits": ["expert-coach authority", "high confidence", "simple vocabulary", "conversion-focused CTAs", "gaming metaphors"]},
+    {"source": "style_dilber", "target": "style_harding", "type": "STYLE_SIMILARITY", "similarity_score": 71, "shared_traits": ["low formality", "contrarian positioning", "question-heavy", "anti-establishment tone"]},
+    {"source": "style_perry", "target": "style_belcak", "type": "STYLE_SIMILARITY", "similarity_score": 75, "shared_traits": ["ultra-short paragraphs", "high command frequency", "framework-oriented", "action-first closers"]},
+    {"source": "style_tegze", "target": "style_dilber", "type": "STYLE_SIMILARITY", "similarity_score": 58, "shared_traits": ["insider perspective", "educational tone", "moderate fragment use"]},
+    {"source": "style_harding", "target": "style_perry", "type": "STYLE_SIMILARITY", "similarity_score": 52, "shared_traits": ["ultra-short paragraphs", "high confidence", "simple vocabulary"]}
+  ]
+}

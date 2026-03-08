@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Careersy Creator Knowledge Graph</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0a0a0f; color: #e0e0e0; overflow: hidden; }
+
+  #app { display: flex; height: 100vh; }
+
+  #sidebar {
+    width: 380px; min-width: 380px; background: #111118;
+    border-right: 1px solid #2a2a35; display: flex; flex-direction: column;
+    overflow-y: auto; z-index: 10;
+  }
+
+  #sidebar-header {
+    padding: 20px; border-bottom: 1px solid #2a2a35;
+    background: linear-gradient(135deg, #14141f 0%, #1a1a2e 100%);
+  }
+  #sidebar-header h1 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+  #sidebar-header .subtitle { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1.2px; }
+
+  #search-box {
+    margin: 12px 20px; padding: 8px 12px; background: #1a1a25; border: 1px solid #2a2a35;
+    border-radius: 6px; color: #e0e0e0; font-size: 13px; width: calc(100% - 40px);
+    outline: none; transition: border-color 0.2s;
+  }
+  #search-box:focus { border-color: #5b6abf; }
+  #search-box::placeholder { color: #555; }
+
+  #filters { padding: 12px 20px; border-bottom: 1px solid #2a2a35; display: flex; flex-wrap: wrap; gap: 6px; }
+  .filter-btn {
+    padding: 4px 10px; border-radius: 12px; border: 1px solid #2a2a35; background: transparent;
+    color: #aaa; font-size: 11px; cursor: pointer; transition: all 0.2s;
+  }
+  .filter-btn:hover { border-color: #5b6abf; color: #fff; }
+  .filter-btn.active { background: var(--btn-color, #5b6abf); border-color: var(--btn-color, #5b6abf); color: #fff; }
+
+  #detail-panel { padding: 20px; flex: 1; overflow-y: auto; }
+  #detail-panel h2 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+  #detail-panel .detail-type { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; padding: 2px 8px; border-radius: 10px; display: inline-block; margin-bottom: 8px; }
+  #detail-panel .detail-row { margin-bottom: 10px; }
+  #detail-panel .detail-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #666; margin-bottom: 2px; }
+  #detail-panel .detail-value { font-size: 13px; color: #ccc; line-height: 1.5; }
+  #detail-panel .detail-value strong { color: #fff; }
+  .careersy-box { background: #1a1525; border: 1px solid #3d2d6b; border-radius: 8px; padding: 12px; margin-top: 12px; }
+  .careersy-box .careersy-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #9b6dff; margin-bottom: 6px; }
+  .careersy-box .careersy-text { font-size: 12px; color: #c4a8ff; line-height: 1.5; }
+
+  .connections-list { margin-top: 12px; }
+  .connection-item {
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px;
+    cursor: pointer; transition: background 0.15s; margin-bottom: 2px;
+  }
+  .connection-item:hover { background: #1a1a28; }
+  .connection-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .connection-name { font-size: 12px; color: #bbb; }
+  .connection-edge { font-size: 10px; color: #555; margin-left: auto; }
+
+  #graph-container { flex: 1; position: relative; }
+
+  #legend {
+    position: absolute; bottom: 20px; left: 20px; background: rgba(17,17,24,0.92);
+    border: 1px solid #2a2a35; border-radius: 10px; padding: 14px 18px; z-index: 5;
+    backdrop-filter: blur(10px);
+  }
+  #legend h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .legend-label { font-size: 11px; color: #aaa; }
+
+  #stats {
+    position: absolute; top: 20px; right: 20px; background: rgba(17,17,24,0.92);
+    border: 1px solid #2a2a35; border-radius: 10px; padding: 14px 18px; z-index: 5;
+    backdrop-filter: blur(10px); text-align: right;
+  }
+  .stat-row { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 4px; }
+  .stat-label { font-size: 11px; color: #666; }
+  .stat-value { font-size: 13px; font-weight: 600; color: #fff; }
+
+  svg { width: 100%; height: 100%; }
+  .link { stroke-opacity: 0.15; }
+  .link.highlighted { stroke-opacity: 0.7; }
+  .link-label { font-size: 9px; fill: #555; pointer-events: none; display: none; }
+  .link-label.visible { display: block; }
+  .node circle { stroke-width: 2; cursor: pointer; transition: stroke-width 0.2s; }
+  .node circle:hover { stroke-width: 4; }
+  .node.dimmed circle { opacity: 0.15; }
+  .node.dimmed text { opacity: 0.1; }
+  .link.dimmed { stroke-opacity: 0.03; }
+  .node-label { font-size: 10px; fill: #999; pointer-events: none; font-weight: 500; }
+  .node.highlighted .node-label { fill: #fff; }
+  .node.highlighted circle { stroke-width: 4; }
+
+  #empty-state { padding: 40px 20px; text-align: center; }
+  #empty-state .icon { font-size: 32px; margin-bottom: 12px; }
+  #empty-state p { font-size: 12px; color: #555; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>Careersy Creator Graph</h1>
+      <div class="subtitle">Content Generation System - Layer 1</div>
+    </div>
+    <input type="text" id="search-box" placeholder="Search nodes..." />
+    <div id="filters"></div>
+    <div id="detail-panel">
+      <div id="empty-state">
+        <div class="icon">&#x1F578;</div>
+        <p>Click any node in the graph to explore its connections, properties, and Careersy implications.</p>
+        <p style="margin-top:8px;color:#444;">Drag to reposition. Scroll to zoom. Click background to reset.</p>
+      </div>
+    </div>
+  </div>
+  <div id="graph-container">
+    <svg id="graph-svg"></svg>
+    <div id="legend"></div>
+    <div id="stats"></div>
+  </div>
+</div>
+
+<script>
+const COLORS = {
+  Creator: '#4a7dff',
+  Topic: '#2ecc71',
+  Template: '#f39c12',
+  MonetizationModel: '#e74c3c',
+  CTA: '#9b59b6',
+  Platform: '#1abc9c',
+  Product: '#e91e90',
+  Pattern: '#f1c40f'
+};
+
+const TYPE_LABELS = {
+  Creator: 'Creators',
+  Topic: 'Topics',
+  Template: 'Templates',
+  MonetizationModel: 'Monetization',
+  CTA: 'CTAs',
+  Platform: 'Platforms',
+  Product: 'Products',
+  Pattern: 'Patterns'
+};
+
+let graphData, simulation, svg, g, link, node, linkLabels;
+let activeFilters = new Set(Object.keys(COLORS));
+let selectedNode = null;
+
+// Inline graph data — no server required
+const GRAPH_DATA = {"meta":{"title":"Careersy Content Generation System — Creator Knowledge Graph","version":"1.0","created":"2026-03-08","description":"Cross-creator analysis of 6 LinkedIn career content creators. First layer for the Careersy content generation system.","total_nodes":55,"total_edges":142},"nodes":{"creators":[{"id":"creator_broda","type":"Creator","name":"Adam Broda","linkedin":"adamrbroda","followers":500935,"posting_frequency":"1-2x/day","voice":"Confident, data-driven, coach-authority. Uses bold claims backed by market data.","positioning":"The career cheat-code guy for $150K-$350K roles","headline":"Career Coach | Helping Professionals Land $150K-$350K Roles","core_thesis":"The job market is rigged — but I'll show you the cheat codes","avg_reactions":800,"avg_comments":150,"avg_reposts":50,"monetization_model":"high_ticket_coaching"},{"id":"creator_tegze","type":"Creator","name":"Jan Tegze","linkedin":"jantegze","followers":278269,"posting_frequency":"1x/day","voice":"Recruiter-candour, insider tone, educational. European pragmatism.","positioning":"The recruiter who tells candidates what recruiters won't","headline":"Director of Talent Acquisition @ Tricentis | Author | Speaker","core_thesis":"I'm a recruiter telling you what recruiters won't tell you","avg_reactions":200,"avg_comments":30,"avg_reposts":15,"monetization_model":"newsletter_growth"},{"id":"creator_perry","type":"Creator","name":"Reno Perry","linkedin":"renoperry","followers":567678,"posting_frequency":"1x/day","voice":"Authority, direct, system-oriented. Every post is a mini-framework.","positioning":"The 6-figure job search strategist","headline":"Career Coach | Job Search Strategist","core_thesis":"6-figure offers don't go to the best candidates — they go to the best-prepared","avg_reactions":533,"avg_comments":144,"avg_reposts":63,"monetization_model":"high_ticket_coaching"},{"id":"creator_dilber","type":"Creator","name":"Bonnie Dilber","linkedin":"bonnie-dilber","followers":490000,"posting_frequency":"1-2x/day","voice":"Casual, direct, educator-instincts. Uses 'y'all'. Treats audience as peers.","positioning":"The recruiter who tells you what HR doesn't want you to know","headline":"Recruiting Leader @ Zapier | Former Educator","core_thesis":"I'll tell you the truth about recruiting that HR doesn't want you to know","avg_reactions":117,"avg_comments":33,"avg_reposts":3,"monetization_model":"brand_partnerships"},{"id":"creator_belcak","type":"Creator","name":"Austin Belcak","linkedin":"abelcak","followers":1500000,"posting_frequency":"2x/day","voice":"Confident, systematic, coach-like. Everything is a framework or script.","positioning":"The anti-application guy — get hired without applying online","headline":"Founder @ Cultivated Culture | I Teach People How To Land Amazing Jobs Without Applying Online","core_thesis":"Stop applying online. Period.","avg_reactions":536,"avg_comments":150,"avg_reposts":40,"monetization_model":"digital_products_courses"},{"id":"creator_harding","type":"Creator","name":"Lee Harding","linkedin":"leeharding1","followers":120000,"posting_frequency":"1x/day","voice":"Sharp, funny, no-nonsense. British directness. Anti-guru energy.","positioning":"The honest introverted recruiter who doesn't sugarcoat it","headline":"The Introverted Recruiter | Talent Acquisition Director @ Join Talent","core_thesis":"Most job search advice is rubbish — here's what actually happens","avg_reactions":250,"avg_comments":80,"avg_reposts":20,"monetization_model":"low_ticket_digital_products"}],"topics":[{"id":"topic_job_search_tactics","type":"Topic","name":"Job Search Tactics & Systems","description":"Practical frameworks for running an effective job search: applications, tracking, follow-ups, timing"},{"id":"topic_resume_linkedin","type":"Topic","name":"Resume & LinkedIn Optimization","description":"Profile optimization, headline writing, resume formatting, ATS strategies"},{"id":"topic_networking_outreach","type":"Topic","name":"Networking & Cold Outreach","description":"Referral strategies, cold emails, informational interviews, building connections"},{"id":"topic_labor_market_data","type":"Topic","name":"Labor Market Data & News","description":"Job market statistics, hiring trends, layoffs, economic data commentary"},{"id":"topic_ai_future_work","type":"Topic","name":"AI & Future of Work","description":"AI tools for job search, AI's impact on hiring, building AI skills, AI replacing jobs"},{"id":"topic_recruiting_transparency","type":"Topic","name":"Recruiting Insider Truths","description":"Behind-the-curtain recruiting processes, what recruiters actually look at, hiring biases"},{"id":"topic_interview_prep","type":"Topic","name":"Interview Preparation","description":"Behavioral questions, STAR method, negotiation tactics, follow-up emails"},{"id":"topic_salary_negotiation","type":"Topic","name":"Salary Negotiation","description":"Negotiation scripts, benchmark data, counter-offer strategies, total compensation"},{"id":"topic_personal_branding","type":"Topic","name":"Personal Branding & Visibility","description":"Building LinkedIn presence, thought leadership, portfolio strategy, content creation for job seekers"},{"id":"topic_mindset","type":"Topic","name":"Mindset & Motivation","description":"Overcoming rejection, imposter syndrome, career confidence, persistence"},{"id":"topic_social_proof","type":"Topic","name":"Social Proof & Case Studies","description":"Client success stories, testimonial screenshots, before/after career transformations"},{"id":"topic_cv_screening","type":"Topic","name":"CV Screening & ATS Reality","description":"How CVs are actually reviewed, ATS myths debunked, what gets past the first filter"}],"templates":[{"id":"template_data_hook","type":"Template","name":"Data/News Hook","structure":"Lead with specific stat or news event → Add insider perspective → CTA","why_it_works":"Combines timeliness with authority. Reader gets news + expert interpretation in one post.","example_opener":"The job market lost another 92k jobs in February..."},{"id":"template_numbered_list","type":"Template","name":"Numbered List / Micro-Guide","structure":"Problem headline → 3-7 numbered actionable items → Each with copy-paste script/template → CTA","why_it_works":"Maximum actionability per post. Readers can implement same-day. High save/bookmark rate.","example_opener":"5 Steps To A Job-Winning LinkedIn Headline:"},{"id":"template_contrarian_reframe","type":"Template","name":"Contrarian Reframe","structure":"Hot take against consensus → Invite disagreement → Numbered reasoning → CTA","why_it_works":"Pattern interrupt. Generates debate in comments. Algorithm rewards controversy.","example_opener":"I don't really buy that companies are laying people off 'because of AI'..."},{"id":"template_insider_reveal","type":"Template","name":"Insider Reveal","structure":"\"Here's what actually happens when...\" → Step-by-step behind-the-scenes → Actionable takeaway","why_it_works":"Information asymmetry is powerful. Candidates desperately want to know what happens on the other side.","example_opener":"I've reviewed 3,000+ resumes this past year..."},{"id":"template_social_proof_story","type":"Template","name":"Social Proof Story","structure":"Screenshot of client DM/email/result → Brief context → \"Here's what they did\" → CTA","why_it_works":"Social proof is the most persuasive format. Shows real results, not theory.","example_opener":"Just got this message from a client who landed at Google..."},{"id":"template_build_in_public","type":"Template","name":"Build-in-Public Diary","structure":"Personal action taken → Tag companies/people → Share learning → Invite others to join","why_it_works":"Makes complex topics approachable. Positions creator as relatable learner, not distant expert.","example_opener":"I built my first skill in Claude Code yesterday!"},{"id":"template_myth_buster","type":"Template","name":"Myth-Buster","structure":"Name common belief → Explain why it's wrong from experience → Give actual reality → CTA","why_it_works":"Frustration-driven engagement. People WANT to believe the system is broken and share when validated.","example_opener":"You don't need to 'beat the ATS'..."},{"id":"template_authority_opener","type":"Template","name":"Authority Opener","structure":"Credential/experience claim → Bold statement → Evidence/framework → CTA","why_it_works":"Establishes trust immediately. Reader knows why they should listen before the advice begins.","example_opener":"I've coached 500+ job seekers this year. Here's what separates the ones who land offers..."}],"monetization_models":[{"id":"model_high_ticket_coaching","type":"MonetizationModel","name":"High-Ticket Coaching","price_range":"$3,000 - $10,000+","description":"Free content → book a call → discovery session → 1:1 or group coaching packages. High revenue per client, limited scale.","conversion_path":"Post → CTA → Typeform/Calendly → Discovery Call → Enrollment"},{"id":"model_digital_products","type":"MonetizationModel","name":"Low-Ticket Digital Products","price_range":"$29 - $647","description":"Free content → email list → self-serve courses, tools, templates. High volume, heavily automated. Scales without creator time.","conversion_path":"Post → Free Resource → Email Sequence → Product Purchase"},{"id":"model_brand_partnerships","type":"MonetizationModel","name":"Brand Partnerships","price_range":"Variable (audience-dependent)","description":"Build large audience → brands pay for sponsored content, integrations, endorsements. Creator doesn't sell to audience directly.","conversion_path":"Content → Audience Growth → Brand Deal Inquiry → Sponsored Post"}],"ctas":[{"id":"cta_book_appointment","type":"CTA","name":"Book an Appointment","mechanism":"Typeform/Calendly link in every post and bio","placement":"End of post + comments + profile header"},{"id":"cta_download_resource","type":"CTA","name":"Download Free Resource","mechanism":"Gated PDF/template requiring email signup","placement":"End of post with specific resource name"},{"id":"cta_newsletter_signup","type":"CTA","name":"Newsletter Signup","mechanism":"Subscribe to weekly/bi-weekly newsletter","placement":"Bio + selected posts"},{"id":"cta_linktree","type":"CTA","name":"Linktree Hub","mechanism":"Single link aggregating all offers, newsletter, social links","placement":"Every post footer"},{"id":"cta_comment_trigger","type":"CTA","name":"Comment-Triggered Auto-DM","mechanism":"\"Comment [KEYWORD] and I'll send you the guide\" → StanAutoDM delivers resource","placement":"End of post + video CTA"},{"id":"cta_branded_infographic","type":"CTA","name":"Branded Infographic CTA","mechanism":"Infographic with creator branding includes CTA as last slide or watermark","placement":"Embedded in post media"}],"platforms":[{"id":"platform_linkedin","type":"Platform","name":"LinkedIn","platform_type":"social"},{"id":"platform_tiktok","type":"Platform","name":"TikTok","platform_type":"social"},{"id":"platform_instagram","type":"Platform","name":"Instagram","platform_type":"social"},{"id":"platform_newsletter","type":"Platform","name":"Newsletter / Substack","platform_type":"owned"},{"id":"platform_podcast","type":"Platform","name":"Podcast","platform_type":"owned"},{"id":"platform_website","type":"Platform","name":"Website / Blog","platform_type":"owned"}],"products":[{"id":"product_broda_coaching","type":"Product","name":"Career Coaching ($150K-$350K roles)","price":"$3,000-$10,000+","creator":"creator_broda"},{"id":"product_perry_coaching","type":"Product","name":"Job Search Coaching","price":"$3,000-$10,000+","creator":"creator_perry"},{"id":"product_tegze_newsletter","type":"Product","name":"Talent Spotlight Newsletter","price":"Free (monetized via sponsors)","creator":"creator_tegze"},{"id":"product_belcak_djs","type":"Product","name":"Dream Job System Course","price":"$647","creator":"creator_belcak"},{"id":"product_belcak_tools","type":"Product","name":"Resume Builder + Job Tracker Tools","price":"$37-$97","creator":"creator_belcak"},{"id":"product_belcak_newsletter","type":"Product","name":"Cultivated Culture Newsletter","price":"Free (funnel to paid)","creator":"creator_belcak"},{"id":"product_harding_cv_reviewer","type":"Product","name":"AI CV Reviewer","price":"£29","creator":"creator_harding"},{"id":"product_harding_playbook","type":"Product","name":"Complete Job Search System","price":"£29","creator":"creator_harding"},{"id":"product_harding_newsletter","type":"Product","name":"The Introverted Recruiter Newsletter","price":"Free (11K+ subscribers)","creator":"creator_harding"},{"id":"product_dilber_brand_deals","type":"Product","name":"Brand Partnership Content","price":"Variable","creator":"creator_dilber"}],"patterns":[{"id":"pattern_one_idea","type":"Pattern","name":"Own ONE Contrarian Idea","description":"Every top creator owns a single contrarian thesis that all content flows from. This idea is repeatable, ownable, and instantly recognizable.","careersy_implication":"Eli needs ONE idea: 'The ANZ job market doesn't reward the best candidates — it punishes the ones who don't know the game.' Maps to the Invisible Applicant avatar."},{"id":"pattern_five_templates","type":"Pattern","name":"Five Universal Content Templates","description":"Data Hook, Numbered List, Contrarian Reframe, Insider Reveal, Social Proof Story — every creator uses 3-5 of these in rotation.","careersy_implication":"Start with Contrarian Reframe and Insider Reveal — they map directly to Careersy audience language from intake calls."},{"id":"pattern_three_models","type":"Pattern","name":"Three Monetization Models","description":"High-ticket coaching (Broda, Perry), low-ticket digital products (Belcak, Harding), brand partnerships (Dilber). Each requires different content volume and audience size.","careersy_implication":"Careersy runs coaching model. Add a $49-$97 AUD tripwire product before coaching upsell to address price sensitivity from intake calls."},{"id":"pattern_cta_every_post","type":"Pattern","name":"Standardized CTA on Every Post","description":"All 6 creators have ONE consistent CTA on every single post. No post goes without a conversion mechanism.","careersy_implication":"Standardize: 'Comment AUDIT and I'll send you my ANZ resume scorecard' — combines Harding's auto-DM with Perry's booking endgame."},{"id":"pattern_80_15_5","type":"Pattern","name":"80/15/5 Value-to-Sell Ratio","description":"80% pure value posts, 15% soft-sell (case studies, testimonials), 5% direct-sell (launches, enrollment). Nobody leads with the sell.","careersy_implication":"Use 91 testimonials as Social Proof Story factory — one per week. Remaining posts are pure value."},{"id":"pattern_text_first","type":"Pattern","name":"Text-First, Visuals as Scroll-Stoppers","description":"Text-only posts dominate for engagement. Branded infographics and carousels used as scroll-stoppers. Video growing but optional.","careersy_implication":"Start with text-only posts (lowest production cost). Add one branded template for infographic posts. Video optional."}]},"edges":[{"source":"creator_broda","target":"topic_job_search_tactics","type":"COVERS","share":40},{"source":"creator_broda","target":"topic_resume_linkedin","type":"COVERS","share":20},{"source":"creator_broda","target":"topic_labor_market_data","type":"COVERS","share":15},{"source":"creator_broda","target":"topic_ai_future_work","type":"COVERS","share":10},{"source":"creator_broda","target":"topic_mindset","type":"COVERS","share":10},{"source":"creator_broda","target":"topic_social_proof","type":"COVERS","share":5},{"source":"creator_tegze","target":"topic_job_search_tactics","type":"COVERS","share":35},{"source":"creator_tegze","target":"topic_ai_future_work","type":"COVERS","share":25},{"source":"creator_tegze","target":"topic_personal_branding","type":"COVERS","share":20},{"source":"creator_tegze","target":"topic_recruiting_transparency","type":"COVERS","share":10},{"source":"creator_tegze","target":"topic_mindset","type":"COVERS","share":5},{"source":"creator_perry","target":"topic_job_search_tactics","type":"COVERS","share":35},{"source":"creator_perry","target":"topic_mindset","type":"COVERS","share":25},{"source":"creator_perry","target":"topic_resume_linkedin","type":"COVERS","share":15},{"source":"creator_perry","target":"topic_networking_outreach","type":"COVERS","share":15},{"source":"creator_perry","target":"topic_labor_market_data","type":"COVERS","share":10},{"source":"creator_dilber","target":"topic_ai_future_work","type":"COVERS","share":30},{"source":"creator_dilber","target":"topic_recruiting_transparency","type":"COVERS","share":25},{"source":"creator_dilber","target":"topic_labor_market_data","type":"COVERS","share":20},{"source":"creator_dilber","target":"topic_job_search_tactics","type":"COVERS","share":10},{"source":"creator_dilber","target":"topic_personal_branding","type":"COVERS","share":10},{"source":"creator_belcak","target":"topic_networking_outreach","type":"COVERS","share":30},{"source":"creator_belcak","target":"topic_resume_linkedin","type":"COVERS","share":25},{"source":"creator_belcak","target":"topic_job_search_tactics","type":"COVERS","share":20},{"source":"creator_belcak","target":"topic_personal_branding","type":"COVERS","share":10},{"source":"creator_belcak","target":"topic_mindset","type":"COVERS","share":10},{"source":"creator_belcak","target":"topic_social_proof","type":"COVERS","share":5},{"source":"creator_harding","target":"topic_cv_screening","type":"COVERS","share":25},{"source":"creator_harding","target":"topic_job_search_tactics","type":"COVERS","share":25},{"source":"creator_harding","target":"topic_recruiting_transparency","type":"COVERS","share":20},{"source":"creator_harding","target":"topic_interview_prep","type":"COVERS","share":15},{"source":"creator_harding","target":"topic_salary_negotiation","type":"COVERS","share":10},{"source":"creator_harding","target":"topic_ai_future_work","type":"COVERS","share":5},{"source":"creator_broda","target":"template_data_hook","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_broda","target":"template_numbered_list","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_broda","target":"template_social_proof_story","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_tegze","target":"template_contrarian_reframe","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_tegze","target":"template_insider_reveal","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_tegze","target":"template_data_hook","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_tegze","target":"template_numbered_list","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_perry","target":"template_authority_opener","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_perry","target":"template_contrarian_reframe","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_perry","target":"template_insider_reveal","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_perry","target":"template_social_proof_story","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_dilber","target":"template_contrarian_reframe","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_dilber","target":"template_build_in_public","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_dilber","target":"template_data_hook","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_dilber","target":"template_insider_reveal","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_belcak","target":"template_numbered_list","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_belcak","target":"template_contrarian_reframe","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_belcak","target":"template_social_proof_story","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_belcak","target":"template_data_hook","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_harding","target":"template_myth_buster","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_harding","target":"template_insider_reveal","type":"USES_TEMPLATE","frequency":"high"},{"source":"creator_harding","target":"template_contrarian_reframe","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_harding","target":"template_numbered_list","type":"USES_TEMPLATE","frequency":"medium"},{"source":"creator_broda","target":"model_high_ticket_coaching","type":"MONETIZES_VIA"},{"source":"creator_perry","target":"model_high_ticket_coaching","type":"MONETIZES_VIA"},{"source":"creator_belcak","target":"model_digital_products","type":"MONETIZES_VIA"},{"source":"creator_harding","target":"model_digital_products","type":"MONETIZES_VIA"},{"source":"creator_dilber","target":"model_brand_partnerships","type":"MONETIZES_VIA"},{"source":"creator_tegze","target":"model_digital_products","type":"MONETIZES_VIA"},{"source":"creator_broda","target":"cta_book_appointment","type":"HAS_CTA","placement":"every post + comments"},{"source":"creator_broda","target":"cta_branded_infographic","type":"HAS_CTA","placement":"every post media"},{"source":"creator_perry","target":"cta_book_appointment","type":"HAS_CTA","placement":"every post + bio"},{"source":"creator_perry","target":"cta_branded_infographic","type":"HAS_CTA","placement":"every post media"},{"source":"creator_tegze","target":"cta_newsletter_signup","type":"HAS_CTA","placement":"bio + selected posts"},{"source":"creator_dilber","target":"cta_linktree","type":"HAS_CTA","placement":"every post footer"},{"source":"creator_belcak","target":"cta_download_resource","type":"HAS_CTA","placement":"every post"},{"source":"creator_belcak","target":"cta_newsletter_signup","type":"HAS_CTA","placement":"every post"},{"source":"creator_harding","target":"cta_comment_trigger","type":"HAS_CTA","placement":"every post + video CTA"},{"source":"creator_broda","target":"platform_linkedin","type":"ACTIVE_ON","followers":500935,"role":"primary"},{"source":"creator_tegze","target":"platform_linkedin","type":"ACTIVE_ON","followers":278269,"role":"primary"},{"source":"creator_tegze","target":"platform_newsletter","type":"ACTIVE_ON","role":"secondary"},{"source":"creator_perry","target":"platform_linkedin","type":"ACTIVE_ON","followers":567678,"role":"primary"},{"source":"creator_dilber","target":"platform_linkedin","type":"ACTIVE_ON","followers":490000,"role":"primary"},{"source":"creator_dilber","target":"platform_tiktok","type":"ACTIVE_ON","followers":86000,"role":"secondary"},{"source":"creator_dilber","target":"platform_instagram","type":"ACTIVE_ON","followers":16000,"role":"tertiary"},{"source":"creator_dilber","target":"platform_newsletter","type":"ACTIVE_ON","role":"secondary"},{"source":"creator_belcak","target":"platform_linkedin","type":"ACTIVE_ON","followers":1500000,"role":"primary"},{"source":"creator_belcak","target":"platform_newsletter","type":"ACTIVE_ON","role":"secondary"},{"source":"creator_belcak","target":"platform_podcast","type":"ACTIVE_ON","role":"secondary"},{"source":"creator_belcak","target":"platform_website","type":"ACTIVE_ON","role":"secondary"},{"source":"creator_harding","target":"platform_linkedin","type":"ACTIVE_ON","followers":120000,"role":"primary"},{"source":"creator_harding","target":"platform_tiktok","type":"ACTIVE_ON","followers":151000,"role":"co-primary"},{"source":"creator_harding","target":"platform_newsletter","type":"ACTIVE_ON","role":"secondary"},{"source":"creator_broda","target":"product_broda_coaching","type":"SELLS"},{"source":"creator_perry","target":"product_perry_coaching","type":"SELLS"},{"source":"creator_tegze","target":"product_tegze_newsletter","type":"SELLS"},{"source":"creator_belcak","target":"product_belcak_djs","type":"SELLS"},{"source":"creator_belcak","target":"product_belcak_tools","type":"SELLS"},{"source":"creator_belcak","target":"product_belcak_newsletter","type":"SELLS"},{"source":"creator_harding","target":"product_harding_cv_reviewer","type":"SELLS"},{"source":"creator_harding","target":"product_harding_playbook","type":"SELLS"},{"source":"creator_harding","target":"product_harding_newsletter","type":"SELLS"},{"source":"creator_dilber","target":"product_dilber_brand_deals","type":"SELLS"},{"source":"creator_broda","target":"pattern_one_idea","type":"EXEMPLIFIES"},{"source":"creator_tegze","target":"pattern_one_idea","type":"EXEMPLIFIES"},{"source":"creator_perry","target":"pattern_one_idea","type":"EXEMPLIFIES"},{"source":"creator_dilber","target":"pattern_one_idea","type":"EXEMPLIFIES"},{"source":"creator_belcak","target":"pattern_one_idea","type":"EXEMPLIFIES"},{"source":"creator_harding","target":"pattern_one_idea","type":"EXEMPLIFIES"},{"source":"creator_broda","target":"pattern_five_templates","type":"EXEMPLIFIES"},{"source":"creator_belcak","target":"pattern_five_templates","type":"EXEMPLIFIES"},{"source":"creator_harding","target":"pattern_five_templates","type":"EXEMPLIFIES"},{"source":"creator_dilber","target":"pattern_five_templates","type":"EXEMPLIFIES"},{"source":"creator_perry","target":"pattern_five_templates","type":"EXEMPLIFIES"},{"source":"creator_tegze","target":"pattern_five_templates","type":"EXEMPLIFIES"},{"source":"creator_broda","target":"pattern_cta_every_post","type":"EXEMPLIFIES"},{"source":"creator_perry","target":"pattern_cta_every_post","type":"EXEMPLIFIES"},{"source":"creator_dilber","target":"pattern_cta_every_post","type":"EXEMPLIFIES"},{"source":"creator_belcak","target":"pattern_cta_every_post","type":"EXEMPLIFIES"},{"source":"creator_harding","target":"pattern_cta_every_post","type":"EXEMPLIFIES"},{"source":"creator_broda","target":"pattern_80_15_5","type":"EXEMPLIFIES"},{"source":"creator_perry","target":"pattern_80_15_5","type":"EXEMPLIFIES"},{"source":"creator_belcak","target":"pattern_80_15_5","type":"EXEMPLIFIES"},{"source":"creator_broda","target":"pattern_text_first","type":"EXEMPLIFIES"},{"source":"creator_perry","target":"pattern_text_first","type":"EXEMPLIFIES"},{"source":"creator_dilber","target":"pattern_text_first","type":"EXEMPLIFIES"},{"source":"template_data_hook","target":"model_high_ticket_coaching","type":"FEEDS_INTO","conversion_path":"Stat-driven authority → trust → booking"},{"source":"template_social_proof_story","target":"model_high_ticket_coaching","type":"FEEDS_INTO","conversion_path":"Client result → desire → booking"},{"source":"template_numbered_list","target":"model_digital_products","type":"FEEDS_INTO","conversion_path":"Micro-guide → want full version → download/purchase"},{"source":"template_contrarian_reframe","target":"model_brand_partnerships","type":"FEEDS_INTO","conversion_path":"Viral debate → massive reach → brand value"},{"source":"template_insider_reveal","target":"model_high_ticket_coaching","type":"FEEDS_INTO","conversion_path":"Insider knowledge → trust → want personalized help"},{"source":"template_myth_buster","target":"model_digital_products","type":"FEEDS_INTO","conversion_path":"Debunk myth → show correct approach → sell the tool"},{"source":"topic_job_search_tactics","target":"topic_resume_linkedin","type":"OVERLAPS","strength":"strong"},{"source":"topic_job_search_tactics","target":"topic_networking_outreach","type":"OVERLAPS","strength":"strong"},{"source":"topic_job_search_tactics","target":"topic_interview_prep","type":"OVERLAPS","strength":"strong"},{"source":"topic_recruiting_transparency","target":"topic_cv_screening","type":"OVERLAPS","strength":"strong"},{"source":"topic_ai_future_work","target":"topic_labor_market_data","type":"OVERLAPS","strength":"medium"},{"source":"topic_salary_negotiation","target":"topic_interview_prep","type":"OVERLAPS","strength":"medium"},{"source":"topic_personal_branding","target":"topic_resume_linkedin","type":"OVERLAPS","strength":"medium"},{"source":"topic_mindset","target":"topic_social_proof","type":"OVERLAPS","strength":"weak"}]};
+
+function init() {
+  graphData = GRAPH_DATA;
+  buildGraph();
+  buildFilters();
+  buildLegend();
+  buildStats();
+}
+
+function flattenNodes(data) {
+  const nodes = [];
+  for (const [category, items] of Object.entries(data.nodes)) {
+    items.forEach(item => {
+      nodes.push({
+        ...item,
+        category,
+        color: COLORS[item.type] || '#888',
+        radius: getRadius(item)
+      });
+    });
+  }
+  return nodes;
+}
+
+function getRadius(item) {
+  if (item.type === 'Creator') return Math.max(14, Math.sqrt(item.followers / 5000));
+  if (item.type === 'Pattern') return 16;
+  if (item.type === 'Template') return 12;
+  if (item.type === 'MonetizationModel') return 14;
+  if (item.type === 'Topic') return 11;
+  return 10;
+}
+
+function buildGraph() {
+  const nodes = flattenNodes(graphData);
+  const edges = graphData.edges.map(e => ({
+    ...e,
+    source: e.source,
+    target: e.target
+  }));
+
+  const width = document.getElementById('graph-container').clientWidth;
+  const height = document.getElementById('graph-container').clientHeight;
+
+  svg = d3.select('#graph-svg');
+  svg.selectAll('*').remove();
+
+  g = svg.append('g');
+
+  // Zoom
+  const zoom = d3.zoom()
+    .scaleExtent([0.2, 4])
+    .on('zoom', (event) => g.attr('transform', event.transform));
+  svg.call(zoom);
+
+  // Click background to deselect
+  svg.on('click', (event) => {
+    if (event.target.tagName === 'svg' || event.target.tagName === 'rect') {
+      clearSelection();
+    }
+  });
+
+  // Background
+  g.append('rect').attr('width', 8000).attr('height', 8000).attr('x', -4000).attr('y', -4000)
+    .attr('fill', 'transparent').attr('pointer-events', 'all');
+
+  // Links
+  link = g.append('g').selectAll('line')
+    .data(edges)
+    .join('line')
+    .attr('class', 'link')
+    .attr('stroke', '#3a3a4a')
+    .attr('stroke-width', d => d.type === 'COVERS' ? Math.max(1, (d.share || 10) / 12) : 1.2);
+
+  // Link labels
+  linkLabels = g.append('g').selectAll('text')
+    .data(edges)
+    .join('text')
+    .attr('class', 'link-label')
+    .text(d => d.type.replace(/_/g, ' '));
+
+  // Nodes
+  node = g.append('g').selectAll('g')
+    .data(nodes)
+    .join('g')
+    .attr('class', 'node')
+    .call(d3.drag()
+      .on('start', dragstarted)
+      .on('drag', dragged)
+      .on('end', dragended));
+
+  node.append('circle')
+    .attr('r', d => d.radius)
+    .attr('fill', d => d.color)
+    .attr('stroke', d => d3.color(d.color).brighter(0.5))
+    .on('click', (event, d) => {
+      event.stopPropagation();
+      selectNode(d);
+    })
+    .on('mouseenter', (event, d) => {
+      if (!selectedNode) highlightConnections(d, true);
+    })
+    .on('mouseleave', () => {
+      if (!selectedNode) highlightConnections(null, false);
+    });
+
+  node.append('text')
+    .attr('class', 'node-label')
+    .attr('dy', d => d.radius + 14)
+    .attr('text-anchor', 'middle')
+    .text(d => d.name || d.id);
+
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(edges).id(d => d.id).distance(d => {
+      if (d.type === 'COVERS') return 120;
+      if (d.type === 'EXEMPLIFIES') return 160;
+      return 140;
+    }))
+    .force('charge', d3.forceManyBody().strength(-300))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('collision', d3.forceCollide().radius(d => d.radius + 20))
+    .force('x', d3.forceX(width / 2).strength(0.03))
+    .force('y', d3.forceY(height / 2).strength(0.03))
+    .on('tick', ticked);
+
+  // Fit view after settling
+  setTimeout(() => {
+    const bounds = g.node().getBBox();
+    const fullWidth = width;
+    const fullHeight = height;
+    const midX = bounds.x + bounds.width / 2;
+    const midY = bounds.y + bounds.height / 2;
+    const scale = 0.8 / Math.max(bounds.width / fullWidth, bounds.height / fullHeight);
+    const translate = [fullWidth / 2 - scale * midX, fullHeight / 2 - scale * midY];
+    svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
+  }, 2000);
+}
+
+function ticked() {
+  link
+    .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+    .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+  linkLabels
+    .attr('x', d => (d.source.x + d.target.x) / 2)
+    .attr('y', d => (d.source.y + d.target.y) / 2);
+  node.attr('transform', d => `translate(${d.x},${d.y})`);
+}
+
+function dragstarted(event, d) {
+  if (!event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x; d.fy = d.y;
+}
+function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+function dragended(event, d) {
+  if (!event.active) simulation.alphaTarget(0);
+  d.fx = null; d.fy = null;
+}
+
+function highlightConnections(d, show) {
+  if (!show) {
+    node.classed('dimmed', false).classed('highlighted', false);
+    link.classed('dimmed', false).classed('highlighted', false);
+    linkLabels.classed('visible', false);
+    return;
+  }
+  const connectedIds = new Set();
+  connectedIds.add(d.id);
+  link.each(function(l) {
+    const sid = typeof l.source === 'object' ? l.source.id : l.source;
+    const tid = typeof l.target === 'object' ? l.target.id : l.target;
+    if (sid === d.id) connectedIds.add(tid);
+    if (tid === d.id) connectedIds.add(sid);
+  });
+  node.classed('dimmed', n => !connectedIds.has(n.id));
+  node.classed('highlighted', n => n.id === d.id);
+  link.classed('dimmed', l => {
+    const sid = typeof l.source === 'object' ? l.source.id : l.source;
+    const tid = typeof l.target === 'object' ? l.target.id : l.target;
+    return !(sid === d.id || tid === d.id);
+  });
+  link.classed('highlighted', l => {
+    const sid = typeof l.source === 'object' ? l.source.id : l.source;
+    const tid = typeof l.target === 'object' ? l.target.id : l.target;
+    return sid === d.id || tid === d.id;
+  });
+  linkLabels.classed('visible', l => {
+    const sid = typeof l.source === 'object' ? l.source.id : l.source;
+    const tid = typeof l.target === 'object' ? l.target.id : l.target;
+    return sid === d.id || tid === d.id;
+  });
+}
+
+function selectNode(d) {
+  selectedNode = d;
+  highlightConnections(d, true);
+  renderDetail(d);
+}
+
+function clearSelection() {
+  selectedNode = null;
+  highlightConnections(null, false);
+  document.getElementById('detail-panel').innerHTML = `
+    <div id="empty-state">
+      <div class="icon">&#x1F578;</div>
+      <p>Click any node in the graph to explore its connections, properties, and Careersy implications.</p>
+      <p style="margin-top:8px;color:#444;">Drag to reposition. Scroll to zoom. Click background to reset.</p>
+    </div>`;
+}
+
+function renderDetail(d) {
+  const panel = document.getElementById('detail-panel');
+  let html = '';
+
+  // Type badge
+  html += `<div class="detail-type" style="background:${d.color}22;color:${d.color};border:1px solid ${d.color}44;">${d.type}</div>`;
+  html += `<h2>${d.name || d.id}</h2>`;
+
+  // Properties
+  const skip = new Set(['id', 'type', 'category', 'color', 'radius', 'x', 'y', 'vx', 'vy', 'fx', 'fy', 'index', 'name']);
+  for (const [key, value] of Object.entries(d)) {
+    if (skip.has(key) || value === undefined || value === null) continue;
+    const label = key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    let displayValue = value;
+    if (typeof value === 'number' && value > 1000) displayValue = value.toLocaleString();
+    html += `<div class="detail-row"><div class="detail-label">${label}</div><div class="detail-value">${displayValue}</div></div>`;
+  }
+
+  // Careersy implications (for Pattern nodes)
+  if (d.careersy_implication) {
+    html += `<div class="careersy-box"><div class="careersy-label">Careersy Implication</div><div class="careersy-text">${d.careersy_implication}</div></div>`;
+  }
+
+  // Connected nodes
+  const connections = [];
+  graphData.edges.forEach(e => {
+    if (e.source === d.id || (typeof e.source === 'object' && e.source.id === d.id)) {
+      const targetId = typeof e.target === 'object' ? e.target.id : e.target;
+      const targetNode = findNode(targetId);
+      if (targetNode) connections.push({ node: targetNode, edge: e, direction: 'out' });
+    }
+    if (e.target === d.id || (typeof e.target === 'object' && e.target.id === d.id)) {
+      const sourceId = typeof e.source === 'object' ? e.source.id : e.source;
+      const sourceNode = findNode(sourceId);
+      if (sourceNode) connections.push({ node: sourceNode, edge: e, direction: 'in' });
+    }
+  });
+
+  if (connections.length > 0) {
+    html += `<div class="connections-list"><div class="detail-label" style="margin-bottom:8px;">Connections (${connections.length})</div>`;
+    connections.forEach(c => {
+      const edgeLabel = c.edge.type.replace(/_/g, ' ');
+      const extra = c.edge.share ? ` (${c.edge.share}%)` : (c.edge.frequency ? ` (${c.edge.frequency})` : '');
+      html += `<div class="connection-item" onclick="selectNodeById('${c.node.id}')">
+        <div class="connection-dot" style="background:${COLORS[c.node.type] || '#888'}"></div>
+        <span class="connection-name">${c.node.name || c.node.id}</span>
+        <span class="connection-edge">${edgeLabel}${extra}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  panel.innerHTML = html;
+}
+
+function findNode(id) {
+  for (const items of Object.values(graphData.nodes)) {
+    const found = items.find(n => n.id === id);
+    if (found) return found;
+  }
+  return null;
+}
+
+window.selectNodeById = function(id) {
+  const d = node.data().find(n => n.id === id);
+  if (d) selectNode(d);
+};
+
+function buildFilters() {
+  const container = document.getElementById('filters');
+  Object.entries(TYPE_LABELS).forEach(([type, label]) => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn active';
+    btn.style.setProperty('--btn-color', COLORS[type]);
+    btn.textContent = label;
+    btn.onclick = () => {
+      if (activeFilters.has(type)) {
+        activeFilters.delete(type);
+        btn.classList.remove('active');
+      } else {
+        activeFilters.add(type);
+        btn.classList.add('active');
+      }
+      applyFilters();
+    };
+    container.appendChild(btn);
+  });
+}
+
+function applyFilters() {
+  node.style('display', d => activeFilters.has(d.type) ? null : 'none');
+  link.style('display', d => {
+    const sNode = typeof d.source === 'object' ? d.source : findNode(d.source);
+    const tNode = typeof d.target === 'object' ? d.target : findNode(d.target);
+    if (!sNode || !tNode) return 'none';
+    return (activeFilters.has(sNode.type) && activeFilters.has(tNode.type)) ? null : 'none';
+  });
+}
+
+document.getElementById('search-box').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  if (!q) {
+    node.style('opacity', 1);
+    link.style('opacity', 1);
+    return;
+  }
+  node.style('opacity', d => {
+    const name = (d.name || d.id || '').toLowerCase();
+    const desc = (d.description || d.positioning || d.core_thesis || '').toLowerCase();
+    return (name.includes(q) || desc.includes(q)) ? 1 : 0.1;
+  });
+});
+
+function buildLegend() {
+  const container = document.getElementById('legend');
+  let html = '<h3>Node Types</h3>';
+  Object.entries(TYPE_LABELS).forEach(([type, label]) => {
+    html += `<div class="legend-item"><div class="legend-dot" style="background:${COLORS[type]}"></div><span class="legend-label">${label}</span></div>`;
+  });
+  container.innerHTML = html;
+}
+
+function buildStats() {
+  const container = document.getElementById('stats');
+  const allNodes = Object.values(graphData.nodes).flat();
+  const totalFollowers = allNodes.filter(n => n.followers).reduce((s, n) => s + n.followers, 0);
+  container.innerHTML = `
+    <div class="stat-row"><span class="stat-label">Nodes</span><span class="stat-value">${allNodes.length}</span></div>
+    <div class="stat-row"><span class="stat-label">Edges</span><span class="stat-value">${graphData.edges.length}</span></div>
+    <div class="stat-row"><span class="stat-label">Creators</span><span class="stat-value">6</span></div>
+    <div class="stat-row"><span class="stat-label">Combined Reach</span><span class="stat-value">${(totalFollowers/1000000).toFixed(1)}M</span></div>
+  `;
+}
+
+init();
+
+window.addEventListener('resize', () => {
+  if (simulation) simulation.force('center', d3.forceCenter(
+    document.getElementById('graph-container').clientWidth / 2,
+    document.getElementById('graph-container').clientHeight / 2
+  ));
+});
+</script>
+</body>
+</html>
