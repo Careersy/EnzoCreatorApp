@@ -27,6 +27,13 @@ class GraphQueryRequest(BaseModel):
     query: str
 
 
+class LibraryRequest(BaseModel):
+    library_type: str = Field(default="template", pattern="^(template|framework|tone|persuasion|cta)$")
+    creator: str | None = None
+    topic: str | None = None
+    limit: int = 200
+
+
 class BlueprintRequest(BaseModel):
     query: str
     platform: str = "LinkedIn"
@@ -53,6 +60,14 @@ class GenerateRequest(BaseModel):
     cta_goal: str = "engagement"
     reference_content: str = ""
     model: str | None = None
+
+
+class BriefQuestionsRequest(BaseModel):
+    mode: str = Field(default="generate", pattern="^(generate|rewrite|expand|plan|topic_map|calendar|repurpose)$")
+    user_request: str
+    platform: str = "LinkedIn"
+    model: str | None = None
+    max_questions: int = Field(default=4, ge=2, le=6)
 
 
 class ExpandRequest(BaseModel):

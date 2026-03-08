@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 
 from creator_intelligence_app.app.schemas.api import (
+    BriefQuestionsRequest,
     BlueprintRequest,
     CalendarPlanRequest,
     CompareStyleRequest,
@@ -14,6 +15,7 @@ from creator_intelligence_app.app.schemas.api import (
     GraphQueryRequest,
     IngestTextRequest,
     IntegrationPayload,
+    LibraryRequest,
     Neo4jImportRequest,
     PerformanceIngestRequest,
     PerformanceSummaryRequest,
@@ -154,6 +156,16 @@ def query_graph(req: GraphQueryRequest) -> dict:
     return container.content_service.query_knowledge_graph(query=req.query)
 
 
+@router.post("/query/library")
+def query_library(req: LibraryRequest) -> dict:
+    return container.content_service.knowledge_explorer_library(
+        library_type=req.library_type,
+        creator=req.creator,
+        topic=req.topic,
+        limit=req.limit,
+    )
+
+
 @router.post("/blueprint/build")
 def build_blueprint(req: BlueprintRequest) -> dict:
     return container.content_service.build_style_blueprint(
@@ -188,6 +200,17 @@ def generate(req: GenerateRequest) -> dict:
         cta_goal=req.cta_goal,
         reference_content=req.reference_content,
         model=req.model,
+    )
+
+
+@router.post("/brief/questions")
+def brief_questions(req: BriefQuestionsRequest) -> dict:
+    return container.content_service.build_brief_questions(
+        mode=req.mode,
+        user_request=req.user_request,
+        platform=req.platform,
+        model=req.model,
+        max_questions=req.max_questions,
     )
 
 

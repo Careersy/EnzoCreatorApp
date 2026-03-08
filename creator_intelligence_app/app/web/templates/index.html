@@ -7,31 +7,42 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <header class="hero">
-      <h1>{{ app_name }}</h1>
-      <p>Private local-first creator intelligence workspace</p>
-      <span class="badge">Private mode: {{ "ON" if private_mode else "OFF" }}</span>
-      <span class="badge">API auth: {{ "ON" if api_auth_enabled else "OFF" }}</span>
+    <header class="hero topbar">
+      <div class="topbar-brand">
+        <div class="logo-badge">E</div>
+        <div>
+          <h1>{{ app_name }}</h1>
+          <p>Private local-first creator intelligence workspace</p>
+        </div>
+      </div>
+      <div class="topbar-search">
+        <input type="text" value="Search workflows, styles, and drafts" readonly />
+      </div>
+      <div class="topbar-state">
+        <span class="badge">Private mode: {{ "ON" if private_mode else "OFF" }}</span>
+        <span class="badge">API auth: {{ "ON" if api_auth_enabled else "OFF" }}</span>
+      </div>
     </header>
 
-    <nav class="tabs" id="tabs">
-      <button data-tab="chat" class="active">Chat Studio</button>
-      <button data-tab="upload">Upload / Ingest</button>
-      <button data-tab="explorer">Knowledge Explorer</button>
-      <button data-tab="rewrite">Rewrite Studio</button>
-      <button data-tab="generate">Draft Generator</button>
-      <button data-tab="expand">Long-Form Expander</button>
-      <button data-tab="planner">Content Planner</button>
-      <button data-tab="settings">Settings</button>
-    </nav>
+    <div class="workspace">
+      <nav class="tabs" id="tabs">
+        <button data-tab="chat" class="active">Chat Studio</button>
+        <button data-tab="upload">Upload / Ingest</button>
+        <button data-tab="explorer">Knowledge Explorer</button>
+        <button data-tab="rewrite">Rewrite Studio</button>
+        <button data-tab="generate">Draft Generator</button>
+        <button data-tab="expand">Long-Form Expander</button>
+        <button data-tab="planner">Content Planner</button>
+        <button data-tab="settings">Settings</button>
+      </nav>
 
-    <main>
+      <main>
       <section class="tab-panel active" id="chat">
-        <h2>What are we creating today?</h2>
+        <h2>What can I help you ship?</h2>
         <div class="chat-layout">
           <div class="chat-main card">
             <div id="chatMessages" class="chat-messages"></div>
-            <div class="chat-quick-actions">
+            <div class="chat-quick-actions chat-prompt-chips">
               <button class="quick-action" data-chat-mode="generate" type="button">Give post ideas</button>
               <button class="quick-action" data-chat-mode="rewrite" type="button">Rewrite draft</button>
               <button class="quick-action" data-chat-mode="expand" type="button">Expand to newsletter</button>
@@ -40,38 +51,39 @@
               <button class="quick-action" data-chat-mode="repurpose" type="button">Repurpose by platform</button>
             </div>
 
-            <form id="chatForm" class="chat-input-shell">
-              <div class="chat-controls-row">
-                <select id="chatMode" name="chat_mode">
-                  <option value="generate">Generate</option>
-                  <option value="rewrite">Rewrite</option>
-                  <option value="expand">Expand</option>
-                  <option value="plan">Plan</option>
-                  <option value="topic_map">Topic map</option>
-                  <option value="calendar">Calendar</option>
-                  <option value="repurpose">Repurpose</option>
-                </select>
-                <select id="chatModel" name="model">
-                  {% for model in model_options %}
-                  <option value="{{ model }}" {% if model == default_model %}selected{% endif %}>{{ model }}</option>
-                  {% endfor %}
-                </select>
-                <input id="chatPlatform" name="platform" value="LinkedIn" />
-                <input id="chatAudience" name="audience" value="founders" />
-                <input id="chatGoal" name="goal" value="authority" />
-              </div>
+            <form id="chatForm" class="chat-input-shell chat-claude-shell">
               <textarea
                 id="chatInput"
                 name="chat_input"
                 rows="5"
-                placeholder="Ask Kleo. Example: Rewrite this post in my style with stronger authority."
-                required
+                placeholder="Ask Enzo a question..."
               ></textarea>
-              <div class="chat-actions-row">
+              <div class="chat-actions-row chat-claude-actions">
                 <input id="chatFileInput" type="file" multiple />
-                <button id="chatAttachBtn" type="button" class="btn-ghost">Attach files</button>
+                <div class="chat-tools-left">
+                  <button id="chatPlusBtn" type="button" class="btn-ghost chat-plus-btn">+</button>
+                  <div id="chatPlusMenu" class="chat-plus-menu hidden">
+                    <button id="chatAttachBtn" type="button" class="chat-plus-item">Add files or photos</button>
+                  </div>
+                  <select id="chatMode" name="chat_mode" class="chat-mode-select">
+                    <option value="generate">Generate</option>
+                    <option value="rewrite">Rewrite</option>
+                    <option value="expand">Expand</option>
+                    <option value="plan">Plan</option>
+                    <option value="topic_map">Topic map</option>
+                    <option value="calendar">Calendar</option>
+                    <option value="repurpose">Repurpose</option>
+                  </select>
+                </div>
                 <span id="chatFileStatus">No files attached</span>
-                <button id="chatSendBtn" type="submit">Send</button>
+                <div class="chat-tools-right">
+                  <select id="chatModel" name="model" class="chat-model-select">
+                    {% for model in model_options %}
+                    <option value="{{ model }}" {% if model == default_model %}selected{% endif %}>{{ model }}</option>
+                    {% endfor %}
+                  </select>
+                  <button id="chatSendBtn" type="submit" class="chat-send-btn">↑</button>
+                </div>
               </div>
             </form>
           </div>
@@ -84,7 +96,7 @@
             </div>
             <article class="linkedin-card">
               <header class="linkedin-header">
-                <div class="linkedin-avatar">K</div>
+                <div class="linkedin-avatar">E</div>
                 <div>
                   <strong>You</strong>
                   <div class="muted">Just now</div>
@@ -169,6 +181,22 @@
 
       <section class="tab-panel" id="explorer">
         <h2>Knowledge Explorer</h2>
+        <form id="libraryForm" class="card">
+          <h3>Template / Pattern Library</h3>
+          <div class="grid two">
+            <select name="library_type">
+              <option value="template">Hook Templates</option>
+              <option value="framework">Frameworks</option>
+              <option value="tone">Tone Patterns</option>
+              <option value="persuasion">Persuasion Techniques</option>
+              <option value="cta">CTA Styles</option>
+            </select>
+            <input name="creator" placeholder="Optional creator filter (e.g., Jan Tegze)" />
+          </div>
+          <input name="topic" placeholder="Optional topic filter" />
+          <input name="limit" type="number" value="200" min="20" max="1000" />
+          <button type="submit">Load Library</button>
+        </form>
         <form id="graphQueryForm" class="card">
           <input name="query" placeholder="show strongest hook patterns across creators" required />
           <button type="submit">Run Graph Query</button>
@@ -415,7 +443,8 @@
 
         <pre id="settingsOutput"></pre>
       </section>
-    </main>
+      </main>
+    </div>
 
     <script src="/static/app.js"></script>
   </body>

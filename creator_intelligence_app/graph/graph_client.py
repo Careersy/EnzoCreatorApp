@@ -446,6 +446,56 @@ MATCH ()-[r]->() RETURN nodes, count(r) AS edges
             "connectivity": self.verify_connectivity(),
         }
 
+    def pattern_library(
+        self,
+        relation_type: str = "USES_TEMPLATE",
+        creator: str | None = None,
+        topic: str | None = None,
+        limit: int = 200,
+    ) -> dict[str, Any]:
+        relation = str(relation_type or "USES_TEMPLATE").upper()
+        records = self._neo4j_creator_patterns(
+            relation_type=relation,
+            topic=topic,
+            limit=limit,
+        )
+        if not records:
+            records = self.creator_patterns(
+                topic=topic,
+                relation_type=relation,
+                limit=limit,
+            )
+
+        creator_filter = str(creator or "").strip().lower()
+        if creator_filter:
+            records = [r for r in records if creator_filter in str(r.get("creator", "")).lower()]
+
+        creators = sorted({str(r.get("creator", "")).strip() for r in records if str(r.get("creator", "")).strip()})
+        patterns = sorted({str(r.get("pattern", "")).strip() for r in records if str(r.get("pattern", "")).strip()})
+        relation_counts: dict[str, int] = defaultdict(int)
+        for row in records:
+            relation_counts[str(row.get("relation", relation))] += 1
+
+        strongest_hooks = self._neo4j_strongest_hooks(limit=12) if relation == "USES_TEMPLATE" else []
+        if relation == "USES_TEMPLATE" and not strongest_hooks:
+            strongest_hooks = self.strongest_hook_patterns(limit=12)
+
+        return {
+            "relation": relation,
+            "topic_hint": topic,
+            "creator_filter": creator,
+            "records": records,
+            "summary": {
+                "record_count": len(records),
+                "creator_count": len(creators),
+                "pattern_count": len(patterns),
+                "relation_breakdown": relation_counts,
+            },
+            "creators": creators,
+            "strongest_hooks": strongest_hooks,
+            "connectivity": self.verify_connectivity(),
+        }
+
     def top_nodes_by_type(self, node_type: str, limit: int = 20) -> list[dict[str, Any]]:
         self._ensure_loaded()
         out = []

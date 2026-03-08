@@ -27,7 +27,7 @@ DEFAULT_GRAPH_PATH = Path(os.getenv("CREATOR_GRAPH_PATH", str(Path.cwd() / "know
 
 @dataclass(slots=True)
 class Settings:
-    app_name: str = "Creator Intelligence App"
+    app_name: str = "Enzo Creator App"
     host: str = os.getenv("APP_HOST", "127.0.0.1")
     port: int = int(os.getenv("APP_PORT", "8000"))
     app_env: str = os.getenv("APP_ENV", "development")
@@ -41,11 +41,11 @@ class Settings:
     openai_base_url: str | None = os.getenv("OPENAI_BASE_URL")
     available_models: str = os.getenv(
         "AVAILABLE_MODELS",
-        "gpt-4o-mini,gpt-4.1-mini,gpt-4.1,claude-3-5-sonnet-latest,claude-3-7-sonnet-latest",
+        "claude-sonnet-4-6,claude-opus-4-6,claude-haiku-4-5-20251001,claude-sonnet-4-5-20250929,gpt-4o-mini,gpt-4.1-mini,gpt-4.1",
     )
     llm_provider: str = os.getenv("LLM_PROVIDER", "auto")
     anthropic_api_key: str | None = os.getenv("ANTHROPIC_API_KEY")
-    anthropic_model: str = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest")
+    anthropic_model: str = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
     vector_backend: str = os.getenv("VECTOR_BACKEND", "local")
     chroma_persist_dir: str = os.getenv("CHROMA_PERSIST_DIR", str(INDEX_DIR / "chroma"))
     local_private_mode: bool = os.getenv("LOCAL_PRIVATE_MODE", "true").lower() == "true"
@@ -84,9 +84,11 @@ def parse_cors_origins(raw: str) -> list[str]:
 def parse_model_options(raw: str) -> list[str]:
     models = [item.strip() for item in str(raw or "").split(",") if item.strip()]
     return models or [
+        "claude-sonnet-4-6",
+        "claude-opus-4-6",
+        "claude-haiku-4-5-20251001",
+        "claude-sonnet-4-5-20250929",
         "gpt-4o-mini",
         "gpt-4.1-mini",
         "gpt-4.1",
-        "claude-3-5-sonnet-latest",
-        "claude-3-7-sonnet-latest",
     ]

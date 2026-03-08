@@ -3,12 +3,19 @@ const panels = document.querySelectorAll('.tab-panel');
 
 tabs.forEach((btn) => {
   btn.addEventListener('click', () => {
-    tabs.forEach((b) => b.classList.remove('active'));
-    panels.forEach((p) => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.tab).classList.add('active');
+    const target = btn.dataset.tab;
+    if (target) switchToTab(target);
   });
 });
+
+function switchToTab(tabId) {
+  tabs.forEach((b) => b.classList.remove('active'));
+  panels.forEach((p) => p.classList.remove('active'));
+  const tabBtn = document.querySelector(`#tabs button[data-tab="${tabId}"]`);
+  if (tabBtn) tabBtn.classList.add('active');
+  const panel = document.getElementById(tabId);
+  if (panel) panel.classList.add('active');
+}
 
 function esc(value) {
   return String(value || '')
@@ -20,6 +27,18 @@ function esc(value) {
 function renderJson(elId, payload) {
   const el = document.getElementById(elId);
   if (el) el.textContent = JSON.stringify(payload, null, 2);
+}
+
+function attrEncode(value) {
+  return encodeURIComponent(String(value || ''));
+}
+
+function attrDecode(value) {
+  try {
+    return decodeURIComponent(String(value || ''));
+  } catch (_err) {
+    return String(value || '');
+  }
 }
 
 function formToObj(form) {
@@ -257,10 +276,14 @@ function generateImprovements(context, payload) {
 
 function generateHighlightsTable(context, payload) {
   const draft = String(payload?.final_draft || '');
+  const briefAudience =
+    context?.audience && String(context.audience).toLowerCase() !== 'general' ? context.audience : 'Not specified';
+  const briefGoal =
+    context?.goal && String(context.goal).toLowerCase() !== 'clarity' ? context.goal : 'Not specified';
   const rows = [
     ['Topic brief', context?.topic || '-', firstLine(draft) || '-'],
-    ['Audience', context?.audience || '-', context?.audience || '-'],
-    ['Goal', context?.goal || '-', context?.goal || '-'],
+    ['Audience', briefAudience, briefAudience],
+    ['Goal', briefGoal, briefGoal],
     ['Word count', '-', wordCount(draft)],
     ['Paragraph blocks', '-', String(draft.split(/\n\s*\n/).filter((x) => x.trim()).length)],
   ];
@@ -272,6 +295,84 @@ function generateHighlightsTable(context, payload) {
   </table>`;
 }
 
+function relationBreakdown(records, fallbackRelation = '') {
+  const counts = {};
+  for (const row of records || []) {
+    const rel = String(row?.relation || fallbackRelation || 'RELATED');
+    counts[rel] = (counts[rel] || 0) + 1;
+  }
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+}
+
+function graphRecordTable(records, limit = 40) {
+  const rows = (records || []).slice(0, limit);
+  if (!rows.length) return '<p class="muted">No graph matches found.</p>';
+  return `<div class="graph-table-wrap"><table class="graph-table">
+    <thead>
+      <tr>
+        <th>Creator</th>
+        <th>Pattern</th>
+        <th>Type</th>
+        <th>Relation</th>
+        <th>Weight/Frequency</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>${rows
+      .map((row) => {
+        const edge = row?.edge || {};
+        const weight = row?.weight ?? edge?.frequency ?? row?.frequency ?? '-';
+        const creator = String(row?.creator || '');
+        const pattern = String(row?.pattern || '');
+        const relation = String(row?.relation || '');
+        return `<tr>
+          <td>${esc(creator || '-')}</td>
+          <td>${esc(pattern || '-')}</td>
+          <td>${esc(row?.pattern_type || '-')}</td>
+          <td>${esc(relation || '-')}</td>
+          <td>${esc(weight)}</td>
+          <td>
+            <div class="graph-actions">
+              <button type="button" class="graph-action-btn graph-copy" data-creator="${attrEncode(creator)}" data-pattern="${attrEncode(pattern)}" data-relation="${attrEncode(relation)}">Copy</button>
+              <button type="button" class="graph-action-btn graph-use-generate" data-creator="${attrEncode(creator)}" data-pattern="${attrEncode(pattern)}">Use in Generate</button>
+              <button type="button" class="graph-action-btn graph-use-rewrite" data-creator="${attrEncode(creator)}" data-pattern="${attrEncode(pattern)}">Use in Rewrite</button>
+            </div>
+          </td>
+        </tr>`;
+      })
+      .join('')}</tbody>
+  </table></div>`;
+}
+
+function graphCreatorGroups(records, limitCreators = 10, perCreator = 8) {
+  if (!records || !records.length) return '<p class="muted">No creator group data.</p>';
+  const groups = {};
+  for (const row of records) {
+    const creator = String(row?.creator || 'Unknown');
+    groups[creator] = groups[creator] || [];
+    groups[creator].push(row);
+  }
+
+  const creators = Object.keys(groups)
+    .sort((a, b) => groups[b].length - groups[a].length)
+    .slice(0, limitCreators);
+
+  return `<div class="graph-groups">${creators
+    .map((creator) => {
+      const items = groups[creator].slice(0, perCreator);
+      return `<details class="graph-group">
+        <summary>${esc(creator)} <span class="graph-count">${items.length}</span></summary>
+        <ul>${items
+          .map(
+            (item) =>
+              `<li><strong>${esc(item?.pattern || '-')}</strong> <span class="graph-tag">${esc(item?.pattern_type || '-')}</span> <span class="muted">(${esc(item?.relation || '-')})</span></li>`,
+          )
+          .join('')}</ul>
+      </details>`;
+    })
+    .join('')}</div>`;
+}
+
 function renderModePayload(mode, payload, context = {}) {
   if (payload?.error) {
     return resultCard('Error', `<p>${esc(payload.detail || 'Request failed')}</p>`, { tone: 'danger' });
@@ -279,8 +380,23 @@ function renderModePayload(mode, payload, context = {}) {
 
   if (mode === 'rewrite') {
     const cards = [];
-    const modelUsed = payload?.model_used || context?.model || 'default';
-    cards.push(resultCard('Model Used', `<p><strong>${esc(modelUsed)}</strong></p>`));
+    const modelUsed = payload?.model_used || payload?.llm_meta?.resolved_model || context?.model || 'default';
+    const requestedModel = payload?.llm_meta?.requested_model;
+    cards.push(
+      resultCard(
+        'Model Used',
+        `<p><strong>${esc(modelUsed)}</strong>${requestedModel && requestedModel !== modelUsed ? ` <span class=\"muted\">(requested: ${esc(requestedModel)})</span>` : ''}</p>`,
+      ),
+    );
+    if (payload?.llm_meta?.fallback_used) {
+      cards.push(
+        resultCard(
+          'Model Warning',
+          `<p>Remote model failed. This output is a local fallback preview.</p><p class="muted">${esc(payload?.llm_meta?.error || 'Unknown model/network issue')}</p>`,
+          { tone: 'danger' },
+        ),
+      );
+    }
     cards.push(resultCard('Final Publish-Ready Version', proseToHtml(payload.rewritten_version || ''), { tone: 'publish' }));
     cards.push(resultCard('Key Improvements Made', listHtml(rewriteImprovements(context, payload))));
     cards.push(resultCard('Before / After Highlights', rewriteHighlightsTable(context, payload)));
@@ -301,8 +417,23 @@ function renderModePayload(mode, payload, context = {}) {
 
   if (mode === 'generate') {
     const cards = [];
-    const modelUsed = payload?.model_used || context?.model || 'default';
-    cards.push(resultCard('Model Used', `<p><strong>${esc(modelUsed)}</strong></p>`));
+    const modelUsed = payload?.model_used || payload?.llm_meta?.resolved_model || context?.model || 'default';
+    const requestedModel = payload?.llm_meta?.requested_model;
+    cards.push(
+      resultCard(
+        'Model Used',
+        `<p><strong>${esc(modelUsed)}</strong>${requestedModel && requestedModel !== modelUsed ? ` <span class=\"muted\">(requested: ${esc(requestedModel)})</span>` : ''}</p>`,
+      ),
+    );
+    if (payload?.llm_meta?.fallback_used) {
+      cards.push(
+        resultCard(
+          'Model Warning',
+          `<p>Remote model failed. This output is a local fallback preview.</p><p class="muted">${esc(payload?.llm_meta?.error || 'Unknown model/network issue')}</p>`,
+          { tone: 'danger' },
+        ),
+      );
+    }
     cards.push(resultCard('Final Publish-Ready Version', proseToHtml(payload.final_draft || ''), { tone: 'publish' }));
     cards.push(resultCard('Key Improvements Made', listHtml(generateImprovements(context, payload))));
     cards.push(resultCard('Before / After Highlights', generateHighlightsTable(context, payload)));
@@ -315,8 +446,23 @@ function renderModePayload(mode, payload, context = {}) {
 
   if (mode === 'expand') {
     const cards = [];
-    const modelUsed = payload?.model_used || context?.model || 'default';
-    cards.push(resultCard('Model Used', `<p><strong>${esc(modelUsed)}</strong></p>`));
+    const modelUsed = payload?.model_used || payload?.llm_meta?.resolved_model || context?.model || 'default';
+    const requestedModel = payload?.llm_meta?.requested_model;
+    cards.push(
+      resultCard(
+        'Model Used',
+        `<p><strong>${esc(modelUsed)}</strong>${requestedModel && requestedModel !== modelUsed ? ` <span class=\"muted\">(requested: ${esc(requestedModel)})</span>` : ''}</p>`,
+      ),
+    );
+    if (payload?.llm_meta?.fallback_used) {
+      cards.push(
+        resultCard(
+          'Model Warning',
+          `<p>Remote model failed. This output is a local fallback preview.</p><p class="muted">${esc(payload?.llm_meta?.error || 'Unknown model/network issue')}</p>`,
+          { tone: 'danger' },
+        ),
+      );
+    }
     cards.push(resultCard('Final Publish-Ready Version', proseToHtml(payload.full_draft || ''), { tone: 'publish' }));
     cards.push(resultCard('Key Improvements Made', listHtml(['Expanded short-form idea into long-form structure.', 'Added section flow, examples, and transitions.', 'Maintained style constraints while improving depth.'])));
     cards.push(resultCard('Before / After Highlights', `<table class="highlight-table">
@@ -436,8 +582,50 @@ function renderModePayload(mode, payload, context = {}) {
       );
       cards.push(resultCard('Top Phrases', listHtml(m.top_phrases || [])));
     }
-    if (payload.records) {
-      cards.push(resultCard('Graph Matches', listHtml((payload.records || []).slice(0, 20))));
+    if (payload.records || payload.relation || payload.strongest_hooks || payload.connectivity) {
+      const records = payload.records || [];
+      const creators = new Set(records.map((r) => String(r?.creator || '').trim()).filter(Boolean));
+      const patterns = new Set(records.map((r) => String(r?.pattern || '').trim()).filter(Boolean));
+      const rels = relationBreakdown(records, payload.relation);
+      cards.push(
+        resultCard(
+          'Graph Query Overview',
+          `<div class="graph-kpis">
+            <div class="graph-kpi"><span>Relation</span><strong>${esc(payload.relation || '-')}</strong></div>
+            <div class="graph-kpi"><span>Topic Hint</span><strong>${esc(payload.topic_hint || 'None')}</strong></div>
+            <div class="graph-kpi"><span>Matches</span><strong>${esc(records.length)}</strong></div>
+            <div class="graph-kpi"><span>Creators</span><strong>${esc(creators.size)}</strong></div>
+            <div class="graph-kpi"><span>Patterns</span><strong>${esc(patterns.size)}</strong></div>
+            <div class="graph-kpi"><span>Strong Hooks</span><strong>${esc((payload.strongest_hooks || []).length)}</strong></div>
+          </div>`,
+        ),
+      );
+      cards.push(
+        resultCard(
+          'Relationship Breakdown',
+          rels.length
+            ? `<div class="graph-chip-list">${rels
+                .map(([name, count]) => `<span class="graph-chip">${esc(name)} <strong>${esc(count)}</strong></span>`)
+                .join('')}</div>`
+            : '<p class="muted">No relationship data available.</p>',
+        ),
+      );
+      cards.push(resultCard('Pattern Matches', graphRecordTable(records, 60)));
+      cards.push(resultCard('Creator Groups', graphCreatorGroups(records, 12, 8)));
+      cards.push(resultCard('Strongest Hooks', listHtml(payload.strongest_hooks || [])));
+      if (payload.connectivity) {
+        const c = payload.connectivity || {};
+        cards.push(
+          resultCard(
+            'Graph Connectivity',
+            `<div class="graph-kpis">
+              <div class="graph-kpi"><span>Status</span><strong>${esc(c.status || 'unknown')}</strong></div>
+              <div class="graph-kpi"><span>Neo4j Enabled</span><strong>${esc(c.enabled)}</strong></div>
+              <div class="graph-kpi"><span>Source</span><strong>${esc(c.source || '-')}</strong></div>
+            </div>`,
+          ),
+        );
+      }
     }
     if (!cards.length) {
       cards.push(resultCard('Response', proseToHtml(toShortLine(payload))));
@@ -489,7 +677,7 @@ function appendChatMessage(role, contentHtml, rich = false) {
   if (!wrap) return null;
   const block = document.createElement('div');
   block.className = `chat-msg ${role}`;
-  const label = role === 'user' ? 'You' : role === 'assistant' ? 'Kleo' : 'System';
+  const label = role === 'user' ? 'You' : role === 'assistant' ? 'Enzo' : 'System';
   block.innerHTML = `<div class="chat-msg-head">${label}</div>${rich ? `<div class="chat-rich">${contentHtml}</div>` : `<div>${esc(contentHtml).replaceAll('\n', '<br>')}</div>`}`;
   wrap.appendChild(block);
   wrap.scrollTop = wrap.scrollHeight;
@@ -499,16 +687,209 @@ function appendChatMessage(role, contentHtml, rich = false) {
 const chatModeEl = document.getElementById('chatMode');
 const chatModelEl = document.getElementById('chatModel');
 const chatInputEl = document.getElementById('chatInput');
-const chatPlatformEl = document.getElementById('chatPlatform');
-const chatAudienceEl = document.getElementById('chatAudience');
-const chatGoalEl = document.getElementById('chatGoal');
+const chatPlusBtnEl = document.getElementById('chatPlusBtn');
+const chatPlusMenuEl = document.getElementById('chatPlusMenu');
+const chatAttachBtnEl = document.getElementById('chatAttachBtn');
 const chatFileInputEl = document.getElementById('chatFileInput');
 const chatFileStatusEl = document.getElementById('chatFileStatus');
+const CHAT_DEFAULT_CONTEXT = {
+  platform: 'LinkedIn',
+  audience: 'general',
+  goal: 'clarity',
+};
+const chatBriefState = {
+  active: false,
+  mode: '',
+  baseRequest: '',
+  questions: [],
+  answers: {},
+  index: 0,
+  context: null,
+};
+
+function prettyModelName(modelId) {
+  const raw = String(modelId || '').trim();
+  if (!raw) return 'Default model';
+  const known = {
+    'claude-3-5-haiku-latest': 'Claude Haiku 3.5',
+    'claude-3-5-sonnet-latest': 'Claude Sonnet 3.5',
+    'claude-3-7-sonnet-latest': 'Claude Sonnet 3.7',
+    'claude-3-opus-latest': 'Claude Opus 3',
+    'claude-opus-4-1': 'Claude Opus 4.1',
+    'claude-opus-4-5': 'Claude Opus 4.5',
+    'claude-sonnet-4-5': 'Claude Sonnet 4.5',
+    'claude-sonnet-4-6': 'Claude Sonnet 4.6',
+  };
+  if (known[raw]) return known[raw];
+
+  if (raw.startsWith('claude-')) {
+    const cleaned = raw.replace(/-latest$/i, '');
+    const family = cleaned.includes('opus') ? 'Opus' : cleaned.includes('haiku') ? 'Haiku' : 'Sonnet';
+    const versionMatch = cleaned.match(/(\d)-(\d)(?:-(\d))?/);
+    if (versionMatch) {
+      const major = versionMatch[1];
+      const minor = versionMatch[2];
+      const patch = versionMatch[3] ? `.${versionMatch[3]}` : '';
+      return `Claude ${family} ${major}.${minor}${patch}`;
+    }
+    return `Claude ${family}`;
+  }
+
+  if (raw.startsWith('gpt-')) {
+    return raw.toUpperCase().replace('GPT-', 'GPT-');
+  }
+
+  return raw;
+}
+
+function formatChatModelSelect() {
+  if (!chatModelEl) return;
+  Array.from(chatModelEl.options).forEach((opt) => {
+    const id = String(opt.value || '').trim();
+    opt.textContent = prettyModelName(id);
+  });
+}
+
+function resetChatBriefState() {
+  chatBriefState.active = false;
+  chatBriefState.mode = '';
+  chatBriefState.baseRequest = '';
+  chatBriefState.questions = [];
+  chatBriefState.answers = {};
+  chatBriefState.index = 0;
+  chatBriefState.context = null;
+}
+
+function normalizedBriefQuestions(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item, idx) => {
+      if (!item) return null;
+      if (typeof item === 'string') {
+        return { key: `question_${idx + 1}`, question: item.trim() };
+      }
+      if (typeof item === 'object') {
+        const key = String(item.key || `question_${idx + 1}`)
+          .trim()
+          .toLowerCase()
+          .replace(/[^\w]+/g, '_');
+        const question = String(item.question || '').trim();
+        return question ? { key, question } : null;
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+function fallbackGenerateBriefQuestions() {
+  return [
+    { key: 'audience', question: 'Who exactly is this for?' },
+    { key: 'goal', question: 'What should this post achieve?' },
+    { key: 'proof', question: 'Any story, example, or proof to include?' },
+    { key: 'constraints', question: 'Any constraints (tone, length, phrases to avoid, CTA)?' },
+  ];
+}
+
+function askNextBriefQuestion() {
+  const q = chatBriefState.questions[chatBriefState.index];
+  if (!q) return;
+  const current = chatBriefState.index + 1;
+  const total = chatBriefState.questions.length;
+  appendChatMessage('assistant', `Brief question ${current}/${total}: ${q.question}`);
+}
+
+async function startBriefingFlow(mode, userRequest, context) {
+  const out = await postJson('/api/brief/questions', {
+    mode,
+    user_request: userRequest,
+    platform: context.platform,
+    model: context.model,
+    max_questions: 4,
+  });
+  const questions = normalizedBriefQuestions(out?.questions);
+  const finalQuestions = questions.length ? questions : fallbackGenerateBriefQuestions();
+
+  chatBriefState.active = true;
+  chatBriefState.mode = mode;
+  chatBriefState.baseRequest = userRequest;
+  chatBriefState.questions = finalQuestions;
+  chatBriefState.answers = {};
+  chatBriefState.index = 0;
+  chatBriefState.context = { ...context };
+
+  appendChatMessage(
+    'assistant',
+    "Perfect. I’ll ask a few quick brief questions first so the draft is exactly what you want. Reply one answer at a time. Type `/skipbrief` to skip.",
+  );
+  askNextBriefQuestion();
+}
+
+function buildBriefedGenerateInput(baseRequest, answers) {
+  const sections = [`Original request: ${baseRequest}`];
+  const ordered = [
+    ['audience', 'Audience'],
+    ['goal', 'Goal'],
+    ['proof', 'Proof/Examples'],
+    ['constraints', 'Constraints'],
+    ['tone', 'Tone'],
+    ['cta_goal', 'CTA goal'],
+  ];
+  ordered.forEach(([key, label]) => {
+    const value = String(answers[key] || '').trim();
+    if (value) sections.push(`${label}: ${value}`);
+  });
+
+  Object.entries(answers).forEach(([k, v]) => {
+    if (ordered.find((o) => o[0] === k)) return;
+    const text = String(v || '').trim();
+    if (text) sections.push(`${k}: ${text}`);
+  });
+
+  return sections.join('\n');
+}
+
+async function finalizeBriefAndGenerate() {
+  const context = { ...(chatBriefState.context || CHAT_DEFAULT_CONTEXT) };
+  const answers = chatBriefState.answers || {};
+  if (answers.audience) context.audience = String(answers.audience).trim();
+  if (answers.goal) context.goal = String(answers.goal).trim();
+  if (answers.platform) context.platform = String(answers.platform).trim();
+  if (answers.cta_goal) context.cta_goal = String(answers.cta_goal).trim();
+  context.reference_content = [answers.proof, answers.constraints, answers.tone].filter(Boolean).join('\n');
+
+  const enrichedInput = buildBriefedGenerateInput(chatBriefState.baseRequest, answers);
+  appendChatMessage('system', 'Thanks. Generating draft from your brief...');
+
+  const thinking = appendChatMessage('system', 'Working on it...');
+  const payload = await runModeRequest('generate', enrichedInput, context);
+  thinking?.remove();
+
+  appendChatMessage(
+    'assistant',
+    renderModePayload('generate', payload, {
+      compact: true,
+      original_text: enrichedInput,
+      source_text: enrichedInput,
+      topic: chatBriefState.baseRequest,
+      audience: context.audience,
+      goal: context.goal,
+      model: context.model,
+    }),
+    true,
+  );
+  const draft = primaryDraftFromResponse('generate', payload);
+  if (draft) {
+    const scoreSummary = payload?.scores ? `Scores: ${JSON.stringify(payload.scores)}` : '';
+    updateLinkedinPreview(draft, scoreSummary);
+  }
+
+  resetChatBriefState();
+}
 
 function setChatPlaceholderByMode(mode) {
   if (!chatInputEl) return;
   const map = {
-    generate: 'Describe the topic to generate a draft. Example: AI consulting offer positioning',
+    generate: 'Describe what you want. Enzo will ask brief questions before drafting.',
     rewrite: 'Paste draft to rewrite in your voice.',
     expand: 'Paste short content to expand into long-form.',
     plan: 'Enter one topic to build a multi-week plan.',
@@ -519,10 +900,32 @@ function setChatPlaceholderByMode(mode) {
   chatInputEl.placeholder = map[mode] || map.generate;
 }
 
-chatModeEl?.addEventListener('change', () => setChatPlaceholderByMode(chatModeEl.value));
+chatModeEl?.addEventListener('change', () => {
+  resetChatBriefState();
+  setChatPlaceholderByMode(chatModeEl.value);
+});
 setChatPlaceholderByMode(chatModeEl?.value || 'generate');
+formatChatModelSelect();
 
-document.getElementById('chatAttachBtn')?.addEventListener('click', () => chatFileInputEl?.click());
+chatPlusBtnEl?.addEventListener('click', (e) => {
+  e.stopPropagation();
+  chatPlusMenuEl?.classList.toggle('hidden');
+});
+
+chatAttachBtnEl?.addEventListener('click', () => {
+  chatPlusMenuEl?.classList.add('hidden');
+  chatFileInputEl?.click();
+});
+
+document.addEventListener('click', (e) => {
+  if (!(e.target instanceof Element)) return;
+  if (e.target.closest('#chatPlusMenu') || e.target.closest('#chatPlusBtn')) return;
+  chatPlusMenuEl?.classList.add('hidden');
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') chatPlusMenuEl?.classList.add('hidden');
+});
 
 chatFileInputEl?.addEventListener('change', () => {
   const count = chatFileInputEl.files ? chatFileInputEl.files.length : 0;
@@ -531,6 +934,7 @@ chatFileInputEl?.addEventListener('change', () => {
 
 document.querySelectorAll('.quick-action').forEach((btn) => {
   btn.addEventListener('click', () => {
+    resetChatBriefState();
     const mode = btn.getAttribute('data-chat-mode') || 'generate';
     if (chatModeEl) chatModeEl.value = mode;
     setChatPlaceholderByMode(mode);
@@ -555,6 +959,19 @@ function normalizeModeFromInput(rawMode, text) {
   return { mode: modeMap[alias] || rawMode, text: m[2] || '' };
 }
 
+function defaultPromptForMode(mode) {
+  const map = {
+    generate: 'Create a strong publish-ready draft from my style profile and available sources.',
+    rewrite: 'Rewrite my draft so it sounds more like me, with clearer flow and stronger hook.',
+    expand: 'Expand this idea into a structured long-form draft with sections and examples.',
+    plan: 'Build a practical content series from this topic.',
+    topic_map: 'Map key angles and hooks from this topic.',
+    calendar: 'Create a weekly publishing plan for this topic.',
+    repurpose: 'Repurpose this idea for multiple content formats.',
+  };
+  return map[mode] || map.generate;
+}
+
 async function ingestChatFiles() {
   const files = chatFileInputEl?.files ? Array.from(chatFileInputEl.files) : [];
   if (!files.length) return { uploaded: 0, failed: 0 };
@@ -566,7 +983,7 @@ async function ingestChatFiles() {
     fd.append('author_type', 'mine');
     fd.append('status', 'draft');
     fd.append('source_type', 'uploaded_file');
-    fd.append('platform', String(chatPlatformEl?.value || 'LinkedIn'));
+    fd.append('platform', CHAT_DEFAULT_CONTEXT.platform);
     fd.append('content_type', 'post');
     fd.append('run_in_background', 'true');
     fd.append('allow_duplicate', 'false');
@@ -595,8 +1012,8 @@ async function runModeRequest(mode, text, context) {
       platform: context.platform,
       audience: context.audience,
       goal: context.goal,
-      cta_goal: 'engagement',
-      reference_content: '',
+      cta_goal: String(context.cta_goal || 'engagement'),
+      reference_content: String(context.reference_content || ''),
       model: context.model,
     });
   }
@@ -653,28 +1070,68 @@ async function runModeRequest(mode, text, context) {
   return { error: true, detail: `Unsupported mode: ${mode}` };
 }
 
+function resetChatComposer(resetFiles = true) {
+  if (chatInputEl) chatInputEl.value = '';
+  if (resetFiles && chatFileInputEl) chatFileInputEl.value = '';
+  if (resetFiles && chatFileStatusEl) chatFileStatusEl.textContent = 'No files attached';
+  chatPlusMenuEl?.classList.add('hidden');
+}
+
 const chatForm = document.getElementById('chatForm');
 chatForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const rawText = chatInputEl?.value || '';
-  if (!rawText.trim() && (!chatFileInputEl?.files || chatFileInputEl.files.length === 0)) return;
+  const hasFiles = !!(chatFileInputEl?.files && chatFileInputEl.files.length > 0);
+  const userText = String(rawText || '').trim();
+  if (!userText && !hasFiles) return;
+
+  if (chatBriefState.active && chatBriefState.mode === 'generate') {
+    const answer = userText;
+    if (!answer) return;
+    if (/^\/skipbrief$/i.test(answer)) {
+      appendChatMessage('user', answer);
+      await finalizeBriefAndGenerate();
+      resetChatComposer();
+      return;
+    }
+
+    const current = chatBriefState.questions[chatBriefState.index];
+    if (!current) {
+      resetChatBriefState();
+    } else {
+      appendChatMessage('user', answer);
+      chatBriefState.answers[current.key] = answer;
+      chatBriefState.index += 1;
+      resetChatComposer(false);
+      if (chatBriefState.index < chatBriefState.questions.length) {
+        askNextBriefQuestion();
+        return;
+      }
+      await finalizeBriefAndGenerate();
+      return;
+    }
+  }
 
   const normalized = normalizeModeFromInput(chatModeEl?.value || 'generate', rawText);
   const mode = normalized.mode;
-  const text = normalized.text.trim();
+  const text = normalized.text.trim() || defaultPromptForMode(mode);
   const context = {
     model: String(chatModelEl?.value || ''),
-    platform: String(chatPlatformEl?.value || 'LinkedIn'),
-    audience: String(chatAudienceEl?.value || 'founders'),
-    goal: String(chatGoalEl?.value || 'authority'),
+    ...CHAT_DEFAULT_CONTEXT,
   };
 
   if (chatModeEl) chatModeEl.value = mode;
-  appendChatMessage('user', `[${mode} | ${context.model || 'default'}] ${text || '(files only request)'}`);
+  appendChatMessage('user', `[${mode} | ${context.model || 'default'}] ${text}`);
 
   if (chatFileInputEl?.files && chatFileInputEl.files.length > 0) {
     const ingestResult = await ingestChatFiles();
     appendChatMessage('system', `Files ingested: ${ingestResult.uploaded}, failed: ${ingestResult.failed}.`);
+  }
+
+  if (mode === 'generate' && !/^\/nobrief\b/i.test(text)) {
+    await startBriefingFlow(mode, text, context);
+    resetChatComposer();
+    return;
   }
 
   const thinking = appendChatMessage('system', 'Working on it...');
@@ -700,9 +1157,7 @@ chatForm?.addEventListener('submit', async (e) => {
     updateLinkedinPreview(draft, scoreSummary);
   }
 
-  if (chatInputEl) chatInputEl.value = '';
-  if (chatFileInputEl) chatFileInputEl.value = '';
-  if (chatFileStatusEl) chatFileStatusEl.textContent = 'No files attached';
+  resetChatComposer();
 });
 
 document.getElementById('copyLinkedinPreview')?.addEventListener('click', async () => {
@@ -715,11 +1170,7 @@ document.getElementById('usePreviewInRewrite')?.addEventListener('click', () => 
   if (!currentPreviewText.trim()) return;
   const field = document.querySelector('#rewriteForm textarea[name="content"]');
   if (field) field.value = currentPreviewText;
-  tabs.forEach((b) => b.classList.remove('active'));
-  panels.forEach((p) => p.classList.remove('active'));
-  const rewriteTab = document.querySelector('#tabs button[data-tab="rewrite"]');
-  rewriteTab?.classList.add('active');
-  document.getElementById('rewrite')?.classList.add('active');
+  switchToTab('rewrite');
 });
 
 appendChatMessage('assistant', 'Choose a mode and prompt. I will return readable cards and update LinkedIn preview.');
@@ -756,6 +1207,15 @@ document.getElementById('runReindexAll')?.addEventListener('click', async () => 
 });
 
 /* ---------- Explorer ---------- */
+const libraryForm = document.getElementById('libraryForm');
+libraryForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payload = formToObj(libraryForm);
+  payload.limit = Number(payload.limit || '200');
+  const out = await postJson('/api/query/library', payload);
+  setPrettyOutput('explorerOutput', 'explorer', out);
+});
+
 const graphQueryForm = document.getElementById('graphQueryForm');
 graphQueryForm?.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -770,6 +1230,49 @@ extractStyleForm?.addEventListener('submit', async (e) => {
   const payload = formToObj(extractStyleForm);
   const out = await postJson('/api/style/extract', payload);
   setPrettyOutput('explorerOutput', 'explorer', out);
+});
+
+document.addEventListener('click', async (e) => {
+  const target = e.target;
+  if (!(target instanceof Element)) return;
+
+  const copyBtn = target.closest('.graph-copy');
+  if (copyBtn) {
+    const creator = attrDecode(copyBtn.getAttribute('data-creator'));
+    const pattern = attrDecode(copyBtn.getAttribute('data-pattern'));
+    const relation = attrDecode(copyBtn.getAttribute('data-relation'));
+    const line = `${creator} | ${pattern} | ${relation}`;
+    await navigator.clipboard.writeText(line);
+    appendChatMessage('system', `Copied pattern: ${line}`);
+    return;
+  }
+
+  const genBtn = target.closest('.graph-use-generate');
+  if (genBtn) {
+    const creator = attrDecode(genBtn.getAttribute('data-creator'));
+    const pattern = attrDecode(genBtn.getAttribute('data-pattern'));
+    const topicField = document.querySelector('#generateForm input[name="topic"]');
+    const refField = document.querySelector('#generateForm textarea[name="reference_content"]');
+    if (topicField && !String(topicField.value || '').trim()) {
+      topicField.value = pattern;
+    }
+    if (refField) {
+      refField.value = `Apply ${pattern} style inspired by ${creator}.`;
+    }
+    switchToTab('generate');
+    return;
+  }
+
+  const rewriteBtn = target.closest('.graph-use-rewrite');
+  if (rewriteBtn) {
+    const creator = attrDecode(rewriteBtn.getAttribute('data-creator'));
+    const pattern = attrDecode(rewriteBtn.getAttribute('data-pattern'));
+    const inspField = document.querySelector('#rewriteForm input[name="creator_inspiration"]');
+    if (inspField) {
+      inspField.value = `${creator} — ${pattern}`;
+    }
+    switchToTab('rewrite');
+  }
 });
 
 /* ---------- Rewrite ---------- */

@@ -36,7 +36,8 @@ class RewriteEngine:
             audience=audience,
         )
 
-        draft = self.llm_client.complete(system, prompt, model=model)
+        completion = self.llm_client.complete_with_meta(system, prompt, model=model)
+        draft = completion.text
         draft = self.detector.reduce_genericity(
             draft,
             banned_phrases=banned_phrases,
@@ -71,7 +72,14 @@ class RewriteEngine:
             "stronger_hooks": hooks,
             "more_concise": concise,
             "more_punchy": punchy,
-            "model_used": model,
+            "model_used": completion.resolved_model,
+            "llm_meta": {
+                "provider": completion.provider,
+                "requested_model": completion.requested_model,
+                "resolved_model": completion.resolved_model,
+                "fallback_used": completion.fallback_used,
+                "error": completion.error,
+            },
             "style_similarity_score": style_match,
             "scores": {
                 "user_style_match": style_match,

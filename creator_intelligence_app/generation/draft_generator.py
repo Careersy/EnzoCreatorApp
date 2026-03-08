@@ -38,7 +38,8 @@ class DraftGenerator:
             blueprint=blueprint,
             audience=audience,
         )
-        draft = self.llm_client.complete(system, prompt, model=model)
+        completion = self.llm_client.complete_with_meta(system, prompt, model=model)
+        draft = completion.text
 
         risk = self.detector.evaluate(draft, banned_phrases=banned_phrases)
         style_match = self.scorer.score_style_match(draft, user_profile)
@@ -68,7 +69,14 @@ class DraftGenerator:
             "final_draft": revised,
             "alternate_hooks": hooks,
             "cta_options": ctas,
-            "model_used": model,
+            "model_used": completion.resolved_model,
+            "llm_meta": {
+                "provider": completion.provider,
+                "requested_model": completion.requested_model,
+                "resolved_model": completion.resolved_model,
+                "fallback_used": completion.fallback_used,
+                "error": completion.error,
+            },
             "style_notes": [
                 "User voice weighting set as primary",
                 "Creator patterns used as structural scaffolding",

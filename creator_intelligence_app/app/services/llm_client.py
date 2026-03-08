@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from creator_intelligence_app.app.config.settings import SETTINGS, parse_model_options
@@ -17,7 +18,23 @@ except ImportError:  # pragma: no cover
     Anthropic = None
 
 
+@dataclass(slots=True)
+class CompletionResult:
+    text: str
+    provider: str
+    requested_model: str | None
+    resolved_model: str
+    fallback_used: bool = False
+    error: str | None = None
+
+
 class LLMClient:
+    MODEL_ALIASES = {
+        "claude-3-5-sonnet-latest": "claude-sonnet-4-6",
+        "claude-3-7-sonnet-latest": "claude-sonnet-4-6",
+        "claude-3-5-haiku-latest": "claude-haiku-4-5-20251001",
+    }
+
     def __init__(self) -> None:
         self.openai_client = None
         self.anthropic_client = None
@@ -46,54 +63,134 @@ class LLMClient:
             else:
                 model = self.default_openai_model
 
+        model = self.MODEL_ALIASES.get(model, model)
+
         if self.provider_policy == "openai":
             return "openai", model
         if self.provider_policy == "anthropic":
             return "anthropic", model
         return ("anthropic", model) if self._is_anthropic_model(model) else ("openai", model)
 
-    def complete(self, system_prompt: str, user_prompt: str, model: str | None = None) -> str:
+    def _candidate_models(self, provider: str, model: str) -> list[str]:
+        base: list[str] = [model]
+        if provider == "anthropic":
+            base.extend([self.default_anthropic_model, "claude-sonnet-4-6", "claude-opus-4-6"])
+        else:
+            base.extend([self.default_openai_model])
+        out: list[str] = []
+        seen: set[str] = set()
+        for item in base:
+            m = self.MODEL_ALIASES.get(str(item), str(item))
+            if not m or m in seen:
+                continue
+            seen.add(m)
+            out.append(m)
+        return out
+
+    def complete_with_meta(self, system_prompt: str, user_prompt: str, model: str | None = None) -> CompletionResult:
         provider, target_model = self._resolve(model)
+        requested_model = model
+        candidates = self._candidate_models(provider=provider, model=target_model)
+        last_error: str | None = None
 
         if provider == "anthropic":
             if self.anthropic_client is None:
-                return self._fallback(system_prompt, user_prompt, target_model, provider)
-            try:
-                response = self.anthropic_client.messages.create(
-                    model=target_model,
-                    max_tokens=1800,
-                    system=system_prompt,
-                    messages=[{"role": "user", "content": user_prompt}],
+                return self._fallback(
+                    provider=provider,
+                    requested_model=requested_model,
+                    resolved_model=target_model,
+                    error="Anthropic API key/client not configured",
                 )
-                text_blocks = [getattr(part, "text", "") for part in getattr(response, "content", [])]
-                return "\n".join([t for t in text_blocks if t]).strip()
-            except Exception:
-                return self._fallback(system_prompt, user_prompt, target_model, provider)
+            for candidate in candidates:
+                try:
+                    response = self.anthropic_client.messages.create(
+                        model=candidate,
+                        max_tokens=1800,
+                        system=system_prompt,
+                        messages=[{"role": "user", "content": user_prompt}],
+                    )
+                    text_blocks = [getattr(part, "text", "") for part in getattr(response, "content", [])]
+                    text = "\n".join([t for t in text_blocks if t]).strip()
+                    if text:
+                        return CompletionResult(
+                            text=text,
+                            provider=provider,
+                            requested_model=requested_model,
+                            resolved_model=candidate,
+                            fallback_used=False,
+                            error=None,
+                        )
+                except Exception as exc:
+                    last_error = str(exc)
+                    continue
+            return self._fallback(
+                provider=provider,
+                requested_model=requested_model,
+                resolved_model=target_model,
+                error=last_error,
+            )
 
         if self.openai_client is None:
-            return self._fallback(system_prompt, user_prompt, target_model, provider)
-        try:
-            response = self.openai_client.responses.create(
-                model=target_model,
-                input=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
+            return self._fallback(
+                provider=provider,
+                requested_model=requested_model,
+                resolved_model=target_model,
+                error="OpenAI API key/client not configured",
             )
-            return response.output_text
-        except Exception:
-            return self._fallback(system_prompt, user_prompt, target_model, provider)
+        for candidate in candidates:
+            try:
+                response = self.openai_client.responses.create(
+                    model=candidate,
+                    input=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt},
+                    ],
+                )
+                return CompletionResult(
+                    text=response.output_text,
+                    provider=provider,
+                    requested_model=requested_model,
+                    resolved_model=candidate,
+                    fallback_used=False,
+                    error=None,
+                )
+            except Exception as exc:
+                last_error = str(exc)
+                continue
+        return self._fallback(
+            provider=provider,
+            requested_model=requested_model,
+            resolved_model=target_model,
+            error=last_error,
+        )
+
+    def complete(self, system_prompt: str, user_prompt: str, model: str | None = None) -> str:
+        return self.complete_with_meta(system_prompt, user_prompt, model=model).text
 
     @staticmethod
-    def _fallback(system_prompt: str, user_prompt: str, model: str, provider: str) -> str:
-        return (
+    def _fallback(
+        provider: str,
+        requested_model: str | None,
+        resolved_model: str,
+        error: str | None = None,
+    ) -> CompletionResult:
+        requested = requested_model or "(default)"
+        text = (
             "[Local Fallback Draft]\n"
-            "Remote model unavailable (missing config or network/API error). "
-            "This is a deterministic local preview.\n\n"
-            f"Provider requested: {provider}\n"
-            f"Model requested: {model}\n\n"
-            f"System:\n{system_prompt[:350]}\n\n"
-            f"Prompt:\n{user_prompt[:1800]}"
+            "Remote model unavailable. Please choose another model or check network/API access.\n\n"
+            f"Provider: {provider}\n"
+            f"Requested model: {requested}\n"
+            f"Resolved model: {resolved_model}\n"
+        )
+        if error:
+            text += f"\nError: {error[:280]}"
+        return CompletionResult(
+            text=text,
+            provider=provider,
+            requested_model=requested_model,
+            resolved_model=resolved_model,
+            fallback_used=True,
+            error=error,
         )
 
     def status(self) -> dict[str, Any]:

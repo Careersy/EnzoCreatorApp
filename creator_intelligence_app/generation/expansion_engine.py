@@ -35,7 +35,8 @@ class ExpansionEngine:
             blueprint=blueprint,
             audience=audience,
         )
-        full_draft = self.llm_client.complete(system, prompt, model=model)
+        completion = self.llm_client.complete_with_meta(system, prompt, model=model)
+        full_draft = completion.text
         full_draft = self.detector.reduce_genericity(
             full_draft,
             banned_phrases=banned_phrases,
@@ -63,7 +64,14 @@ class ExpansionEngine:
             "title_options": titles,
             "outline": outline,
             "full_draft": full_draft,
-            "model_used": model,
+            "model_used": completion.resolved_model,
+            "llm_meta": {
+                "provider": completion.provider,
+                "requested_model": completion.requested_model,
+                "resolved_model": completion.resolved_model,
+                "fallback_used": completion.fallback_used,
+                "error": completion.error,
+            },
             "shorter_version": full_draft[:1200],
             "style_fidelity_notes": {
                 "user_style_match": style_match,

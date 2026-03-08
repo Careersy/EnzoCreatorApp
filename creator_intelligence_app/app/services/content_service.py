@@ -100,6 +100,123 @@ class ContentIntelligenceService:
             "platform_rules": round(float(merged.get("platform_rules", 0.10)) / total, 3),
         }
 
+    @staticmethod
+    def _extract_json_dict(text: str) -> dict[str, Any]:
+        raw = str(text or "").strip()
+        if not raw:
+            return {}
+
+        if raw.startswith("```"):
+            raw = raw.replace("```json", "").replace("```", "").strip()
+
+        try:
+            loaded = json.loads(raw)
+            return loaded if isinstance(loaded, dict) else {}
+        except Exception:
+            pass
+
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start >= 0 and end > start:
+            snippet = raw[start : end + 1]
+            try:
+                loaded = json.loads(snippet)
+                return loaded if isinstance(loaded, dict) else {}
+            except Exception:
+                return {}
+        return {}
+
+    @staticmethod
+    def _fallback_brief_questions(mode: str) -> list[dict[str, str]]:
+        m = str(mode or "generate").strip().lower()
+        if m == "rewrite":
+            return [
+                {"key": "audience", "question": "Who is this rewrite for?"},
+                {"key": "goal", "question": "What outcome should this rewrite optimize for?"},
+                {"key": "must_keep", "question": "Which lines or ideas must stay unchanged?"},
+                {"key": "tone", "question": "What tone should I keep (for example: direct, calm, punchy)?"},
+            ]
+        if m == "expand":
+            return [
+                {"key": "audience", "question": "Who should this long-form version speak to?"},
+                {"key": "goal", "question": "What should readers do or believe after reading?"},
+                {"key": "depth", "question": "How deep should this go (quick read, practical guide, deep dive)?"},
+                {"key": "examples", "question": "Any examples or case details you want included?"},
+            ]
+        return [
+            {"key": "audience", "question": "Who is the exact audience for this draft?"},
+            {"key": "goal", "question": "What is the primary goal of this piece?"},
+            {"key": "proof", "question": "What personal story, proof, or example should I include?"},
+            {"key": "constraints", "question": "Any constraints to follow (tone, length, phrases to avoid, CTA)?"},
+        ]
+
+    def build_brief_questions(
+        self,
+        mode: str,
+        user_request: str,
+        platform: str = "LinkedIn",
+        model: str | None = None,
+        max_questions: int = 4,
+    ) -> dict[str, Any]:
+        safe_mode = str(mode or "generate").strip().lower()
+        fallback_questions = self._fallback_brief_questions(safe_mode)[: max(2, min(6, int(max_questions)))]
+        system_prompt = (
+            "You are Enzo, a senior content strategist. Your job is to ask concise briefing questions "
+            "that help produce a stronger, specific draft. Return strict JSON only."
+        )
+        user_prompt = (
+            f"Mode: {safe_mode}\n"
+            f"Platform: {platform}\n"
+            f"User request: {user_request}\n\n"
+            f"Return JSON only with this exact shape:\n"
+            "{\n"
+            '  "questions": [\n'
+            '    {"key":"audience","question":"..."},\n'
+            '    {"key":"goal","question":"..."}\n'
+            "  ]\n"
+            "}\n\n"
+            f"Rules:\n"
+            f"- Ask 2 to {max(2, min(6, int(max_questions)))} questions.\n"
+            "- Questions must be practical, short, and specific.\n"
+            "- Keys must be snake_case and stable.\n"
+            "- Prefer these keys when relevant: audience, goal, proof, constraints, cta_goal, tone.\n"
+            "- Do not include any text outside the JSON."
+        )
+
+        completion = self.llm.complete_with_meta(system_prompt, user_prompt, model=model)
+        parsed = self._extract_json_dict(completion.text)
+        raw_questions = parsed.get("questions") if isinstance(parsed, dict) else None
+        questions: list[dict[str, str]] = []
+        if isinstance(raw_questions, list):
+            for idx, item in enumerate(raw_questions):
+                if not isinstance(item, dict):
+                    continue
+                key = str(item.get("key") or f"question_{idx + 1}").strip().lower().replace(" ", "_")
+                question = str(item.get("question") or "").strip()
+                if question:
+                    questions.append({"key": key, "question": question})
+
+        used_fallback = False
+        if not questions:
+            questions = fallback_questions
+            used_fallback = True
+
+        return {
+            "mode": safe_mode,
+            "platform": platform,
+            "original_request": user_request,
+            "questions": questions[: max(2, min(6, int(max_questions)))],
+            "model_used": completion.resolved_model,
+            "llm_meta": {
+                "provider": completion.provider,
+                "requested_model": completion.requested_model,
+                "resolved_model": completion.resolved_model,
+                "fallback_used": completion.fallback_used,
+                "error": completion.error,
+            },
+            "used_fallback_questions": used_fallback,
+        }
+
     def create_job(self, job_type: str, payload: dict[str, Any]) -> str:
         job_id = str(uuid.uuid4())
         self.db.upsert_job(job_id=job_id, job_type=job_type, status="queued", progress=0.0, payload=payload)
@@ -375,6 +492,30 @@ class ContentIntelligenceService:
 
     def query_knowledge_graph(self, query: str) -> dict[str, Any]:
         return self.graph_client.query_natural_language(query)
+
+    def knowledge_explorer_library(
+        self,
+        library_type: str = "template",
+        creator: str | None = None,
+        topic: str | None = None,
+        limit: int = 200,
+    ) -> dict[str, Any]:
+        relation_map = {
+            "template": "USES_TEMPLATE",
+            "framework": "USES_FRAMEWORK",
+            "tone": "USES_TONE",
+            "persuasion": "USES_PERSUASION",
+            "cta": "USES_CTA_STYLE",
+        }
+        relation = relation_map.get(str(library_type or "template").lower(), "USES_TEMPLATE")
+        payload = self.graph_client.pattern_library(
+            relation_type=relation,
+            creator=creator,
+            topic=topic,
+            limit=max(20, min(int(limit or 200), 1000)),
+        )
+        payload["library_type"] = str(library_type or "template").lower()
+        return payload
 
     def build_style_blueprint(
         self,
