@@ -52,8 +52,9 @@
               <button class="quick-action" data-chat-mode="rewrite" type="button">Rewrite draft</button>
               <button class="quick-action" data-chat-mode="expand" type="button">Expand to newsletter</button>
               <button class="quick-action" data-chat-mode="plan" type="button">Plan content series</button>
-              <button class="quick-action" data-chat-mode="topic_map" type="button">Build topic map</button>
-              <button class="quick-action" data-chat-mode="repurpose" type="button">Repurpose by platform</button>
+              <button class="quick-action chat-quick-extra hidden" data-chat-mode="topic_map" type="button">Build topic map</button>
+              <button class="quick-action chat-quick-extra hidden" data-chat-mode="repurpose" type="button">Repurpose by platform</button>
+              <button class="quick-action quick-action-more" id="chatMoreActions" type="button">More</button>
             </div>
 
             <form id="chatForm" class="chat-input-shell chat-claude-shell">
@@ -63,6 +64,40 @@
                 rows="5"
                 placeholder="Ask Enzo a question..."
               ></textarea>
+              <details class="chat-brief-settings">
+                <summary>Brief settings</summary>
+                <div class="chat-brief-grid">
+                  <label>
+                    Mode
+                    <select id="chatMode" name="chat_mode" class="chat-mode-select">
+                      <option value="generate">Generate</option>
+                      <option value="rewrite">Rewrite</option>
+                      <option value="expand">Expand</option>
+                      <option value="plan">Plan</option>
+                      <option value="topic_map">Topic map</option>
+                      <option value="calendar">Calendar</option>
+                      <option value="repurpose">Repurpose</option>
+                    </select>
+                  </label>
+                  <label>
+                    Platform
+                    <input id="chatPlatform" name="platform" value="LinkedIn" />
+                  </label>
+                  <label>
+                    Audience
+                    <input id="chatAudience" name="audience" placeholder="e.g. jobseekers, founders" />
+                  </label>
+                  <label>
+                    Goal
+                    <input id="chatGoal" name="goal" placeholder="e.g. clarity, leads, authority" />
+                  </label>
+                  <label>
+                    CTA goal
+                    <input id="chatCtaGoal" name="cta_goal" placeholder="e.g. comments, DMs, clicks" />
+                  </label>
+                </div>
+              </details>
+
               <div class="chat-actions-row chat-claude-actions">
                 <input id="chatFileInput" type="file" multiple />
                 <div class="chat-tools-left">
@@ -70,15 +105,6 @@
                   <div id="chatPlusMenu" class="chat-plus-menu hidden">
                     <button id="chatAttachBtn" type="button" class="chat-plus-item">Add files or photos</button>
                   </div>
-                  <select id="chatMode" name="chat_mode" class="chat-mode-select">
-                    <option value="generate">Generate</option>
-                    <option value="rewrite">Rewrite</option>
-                    <option value="expand">Expand</option>
-                    <option value="plan">Plan</option>
-                    <option value="topic_map">Topic map</option>
-                    <option value="calendar">Calendar</option>
-                    <option value="repurpose">Repurpose</option>
-                  </select>
                 </div>
                 <span id="chatFileStatus">No files attached</span>
                 <div class="chat-tools-right">

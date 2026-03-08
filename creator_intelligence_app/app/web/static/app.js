@@ -450,6 +450,20 @@ function graphCreatorGroups(records, limitCreators = 10, perCreator = 8) {
     .join('')}</div>`;
 }
 
+function llmDiagnosticsDetails(payload, context = {}) {
+  const modelUsed = payload?.model_used || payload?.llm_meta?.resolved_model || context?.model || 'default';
+  const requestedModel = payload?.llm_meta?.requested_model;
+  const fallback = !!payload?.llm_meta?.fallback_used;
+  const error = payload?.llm_meta?.error || '';
+  return `<details class="result-details">
+    <summary>Diagnostics</summary>
+    <p class="muted">Model used: <strong>${esc(modelUsed)}</strong>${
+      requestedModel && requestedModel !== modelUsed ? ` (requested: ${esc(requestedModel)})` : ''
+    }</p>
+    ${fallback ? `<p class="muted">Fallback mode used. ${esc(error || 'Remote model/network issue')}</p>` : '<p class="muted">Remote model responded successfully.</p>'}
+  </details>`;
+}
+
 function renderModePayload(mode, payload, context = {}) {
   if (payload?.error) {
     return resultCard('Error', `<p>${esc(payload.detail || 'Request failed')}</p>`, { tone: 'danger' });
@@ -457,14 +471,6 @@ function renderModePayload(mode, payload, context = {}) {
 
   if (mode === 'rewrite') {
     const cards = [];
-    const modelUsed = payload?.model_used || payload?.llm_meta?.resolved_model || context?.model || 'default';
-    const requestedModel = payload?.llm_meta?.requested_model;
-    cards.push(
-      resultCard(
-        'Model Used',
-        `<p><strong>${esc(modelUsed)}</strong>${requestedModel && requestedModel !== modelUsed ? ` <span class=\"muted\">(requested: ${esc(requestedModel)})</span>` : ''}</p>`,
-      ),
-    );
     if (payload?.llm_meta?.fallback_used) {
       cards.push(
         resultCard(
@@ -489,19 +495,12 @@ function renderModePayload(mode, payload, context = {}) {
         </div>
       </details>`,
     );
+    cards.push(llmDiagnosticsDetails(payload, context));
     return cards.join('');
   }
 
   if (mode === 'generate') {
     const cards = [];
-    const modelUsed = payload?.model_used || payload?.llm_meta?.resolved_model || context?.model || 'default';
-    const requestedModel = payload?.llm_meta?.requested_model;
-    cards.push(
-      resultCard(
-        'Model Used',
-        `<p><strong>${esc(modelUsed)}</strong>${requestedModel && requestedModel !== modelUsed ? ` <span class=\"muted\">(requested: ${esc(requestedModel)})</span>` : ''}</p>`,
-      ),
-    );
     if (payload?.llm_meta?.fallback_used) {
       cards.push(
         resultCard(
@@ -518,19 +517,12 @@ function renderModePayload(mode, payload, context = {}) {
     cards.push(resultCard('CTA Options', listHtml(payload.cta_options || [])));
     cards.push(resultCard('Style Notes', listHtml(payload.style_notes || [])));
     cards.push(resultCard('Scores', scorePills(payload.scores || {})));
+    cards.push(llmDiagnosticsDetails(payload, context));
     return cards.join('');
   }
 
   if (mode === 'expand') {
     const cards = [];
-    const modelUsed = payload?.model_used || payload?.llm_meta?.resolved_model || context?.model || 'default';
-    const requestedModel = payload?.llm_meta?.requested_model;
-    cards.push(
-      resultCard(
-        'Model Used',
-        `<p><strong>${esc(modelUsed)}</strong>${requestedModel && requestedModel !== modelUsed ? ` <span class=\"muted\">(requested: ${esc(requestedModel)})</span>` : ''}</p>`,
-      ),
-    );
     if (payload?.llm_meta?.fallback_used) {
       cards.push(
         resultCard(
@@ -554,6 +546,7 @@ function renderModePayload(mode, payload, context = {}) {
     cards.push(resultCard('Outline', listHtml(payload.outline || [], true)));
     cards.push(resultCard('Style Fidelity', scorePills(payload.style_fidelity_notes || {})));
     cards.push(`<details class="result-details"><summary>Shorter version</summary>${resultCard('Shorter', proseToHtml(payload.shorter_version || ''))}</details>`);
+    cards.push(llmDiagnosticsDetails(payload, context));
     return cards.join('');
   }
 
@@ -764,11 +757,16 @@ function appendChatMessage(role, contentHtml, rich = false) {
 const chatModeEl = document.getElementById('chatMode');
 const chatModelEl = document.getElementById('chatModel');
 const chatInputEl = document.getElementById('chatInput');
+const chatPlatformEl = document.getElementById('chatPlatform');
+const chatAudienceEl = document.getElementById('chatAudience');
+const chatGoalEl = document.getElementById('chatGoal');
+const chatCtaGoalEl = document.getElementById('chatCtaGoal');
 const chatPlusBtnEl = document.getElementById('chatPlusBtn');
 const chatPlusMenuEl = document.getElementById('chatPlusMenu');
 const chatAttachBtnEl = document.getElementById('chatAttachBtn');
 const chatFileInputEl = document.getElementById('chatFileInput');
 const chatFileStatusEl = document.getElementById('chatFileStatus');
+const chatMoreActionsEl = document.getElementById('chatMoreActions');
 const CHAT_DEFAULT_CONTEXT = {
   platform: 'LinkedIn',
   audience: 'general',
@@ -977,6 +975,20 @@ function setChatPlaceholderByMode(mode) {
   chatInputEl.placeholder = map[mode] || map.generate;
 }
 
+function readChatContext() {
+  const platform = String(chatPlatformEl?.value || CHAT_DEFAULT_CONTEXT.platform).trim() || CHAT_DEFAULT_CONTEXT.platform;
+  const audience = String(chatAudienceEl?.value || CHAT_DEFAULT_CONTEXT.audience).trim() || CHAT_DEFAULT_CONTEXT.audience;
+  const goal = String(chatGoalEl?.value || CHAT_DEFAULT_CONTEXT.goal).trim() || CHAT_DEFAULT_CONTEXT.goal;
+  const cta_goal = String(chatCtaGoalEl?.value || '').trim();
+  return {
+    platform,
+    audience,
+    goal,
+    cta_goal,
+    model: String(chatModelEl?.value || ''),
+  };
+}
+
 chatModeEl?.addEventListener('change', () => {
   resetChatBriefState();
   setChatPlaceholderByMode(chatModeEl.value);
@@ -1011,6 +1023,13 @@ chatFileInputEl?.addEventListener('change', () => {
 
 document.querySelectorAll('.quick-action').forEach((btn) => {
   btn.addEventListener('click', () => {
+    if (btn.id === 'chatMoreActions') {
+      const hiddenItems = document.querySelectorAll('.chat-quick-extra');
+      const shouldShow = Array.from(hiddenItems).some((item) => item.classList.contains('hidden'));
+      hiddenItems.forEach((item) => item.classList.toggle('hidden', !shouldShow));
+      btn.textContent = shouldShow ? 'Less' : 'More';
+      return;
+    }
     resetChatBriefState();
     const mode = btn.getAttribute('data-chat-mode') || 'generate';
     if (chatModeEl) chatModeEl.value = mode;
@@ -1192,13 +1211,11 @@ chatForm?.addEventListener('submit', async (e) => {
   const normalized = normalizeModeFromInput(chatModeEl?.value || 'generate', rawText);
   const mode = normalized.mode;
   const text = normalized.text.trim() || defaultPromptForMode(mode);
-  const context = {
-    model: String(chatModelEl?.value || ''),
-    ...CHAT_DEFAULT_CONTEXT,
-  };
+  const context = readChatContext();
 
   if (chatModeEl) chatModeEl.value = mode;
-  appendChatMessage('user', `[${mode} | ${context.model || 'default'}] ${text}`);
+  appendChatMessage('user', text);
+  appendChatMessage('system', `Mode: ${mode} | Platform: ${context.platform}`);
 
   if (chatFileInputEl?.files && chatFileInputEl.files.length > 0) {
     const ingestResult = await ingestChatFiles();
