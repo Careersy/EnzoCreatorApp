@@ -123,6 +123,47 @@ class ContentServiceIntegrationTest(unittest.TestCase):
         self.assertIsNotNone(job)
         self.assertEqual(job["status"], "queued")
 
+    def test_saved_drafts_and_workspace_state_round_trip(self) -> None:
+        draft_id = self.service.db.save_draft(
+            draft_type="generate",
+            platform="LinkedIn",
+            goal="authority",
+            input_text="AI consulting",
+            output_text="Start with the hard truth.\nThen explain what changed.",
+            hooks=["Start with the hard truth."],
+            ctas=["Comment 'plan' if you want the template."],
+            scores={"clarity": 0.9},
+            notes={"style_notes": ["short lines"]},
+        )
+
+        drafts = self.service.list_saved_drafts(limit=10)
+        self.assertTrue(any(item["id"] == draft_id for item in drafts))
+        self.assertEqual(drafts[0]["output_text"], "Start with the hard truth.\nThen explain what changed.")
+
+        chat_save = self.service.save_chat_history(
+            [
+                {"id": "msg_1", "role": "user", "content": "hello", "rich": False},
+                {"id": "msg_2", "role": "assistant", "content": "hi", "rich": False},
+            ]
+        )
+        self.assertEqual(chat_save["message_count"], 2)
+        self.assertEqual(len(self.service.get_chat_history()["messages"]), 2)
+
+        planner_save = self.service.save_planner_state(
+            [
+                {
+                    "id": "draft|1",
+                    "title": "Saved draft",
+                    "excerpt": "Planner persistence test",
+                    "status": "draft",
+                    "meta_label": "Draft",
+                    "date_label": "2026-03-12",
+                }
+            ]
+        )
+        self.assertEqual(planner_save["post_count"], 1)
+        self.assertEqual(self.service.get_planner_state()["posts"][0]["title"], "Saved draft")
+
     def test_planning_calendar_and_repurpose(self) -> None:
         self.service.ingest_text(
             title="My style seed",

@@ -8,6 +8,7 @@ from creator_intelligence_app.app.schemas.api import (
     BriefQuestionsRequest,
     BlueprintRequest,
     CalendarPlanRequest,
+    ChatHistoryRequest,
     CompareStyleRequest,
     ExpandRequest,
     ExportMarkdownRequest,
@@ -19,6 +20,7 @@ from creator_intelligence_app.app.schemas.api import (
     Neo4jImportRequest,
     PerformanceIngestRequest,
     PerformanceSummaryRequest,
+    PlannerStateRequest,
     PhraseRuleRequest,
     PlanRequest,
     RepurposeRequest,
@@ -131,6 +133,11 @@ def ingest_text(req: IngestTextRequest) -> dict:
 @router.get("/sources")
 def list_sources() -> list[dict]:
     return container.content_service.list_uploaded_sources()
+
+
+@router.get("/drafts")
+def list_drafts(limit: int = 100) -> dict:
+    return {"drafts": container.content_service.list_saved_drafts(limit=limit)}
 
 
 @router.get("/jobs")
@@ -310,6 +317,26 @@ def save_settings(req: SettingsRequest) -> dict:
 def get_settings(key: str) -> dict:
     value = container.content_service.get_settings(key)
     return {"key": key, "value": value}
+
+
+@router.post("/chat/history")
+def save_chat_history(req: ChatHistoryRequest) -> dict:
+    return container.content_service.save_chat_history(req.messages)
+
+
+@router.get("/chat/history")
+def get_chat_history() -> dict:
+    return container.content_service.get_chat_history()
+
+
+@router.post("/planner/state")
+def save_planner_state(req: PlannerStateRequest) -> dict:
+    return container.content_service.save_planner_state(req.posts)
+
+
+@router.get("/planner/state")
+def get_planner_state() -> dict:
+    return container.content_service.get_planner_state()
 
 
 @router.get("/status")

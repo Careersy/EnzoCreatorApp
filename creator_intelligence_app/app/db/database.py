@@ -429,6 +429,28 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             )
             return int(cur.lastrowid)
 
+    def list_drafts(self, limit: int = 100) -> list[dict[str, Any]]:
+        with self.session() as conn:
+            rows = conn.execute(
+                """
+SELECT id, draft_type, platform, goal, input_text, output_text,
+       hooks_json, cta_json, scores_json, notes_json, created_at
+FROM drafts
+ORDER BY id DESC
+LIMIT ?
+""",
+                (limit,),
+            ).fetchall()
+        out: list[dict[str, Any]] = []
+        for row in rows:
+            item = dict(row)
+            item["hooks"] = json.loads(item.get("hooks_json") or "[]")
+            item["ctas"] = json.loads(item.get("cta_json") or "[]")
+            item["scores"] = json.loads(item.get("scores_json") or "{}")
+            item["notes"] = json.loads(item.get("notes_json") or "{}")
+            out.append(item)
+        return out
+
     def add_phrase_rule(self, rule_type: str, phrase: str, weight: float = 1.0) -> int:
         with self.session() as conn:
             cur = conn.execute(

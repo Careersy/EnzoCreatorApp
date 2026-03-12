@@ -105,6 +105,27 @@ async function getJson(url) {
   return requestJson(url, { headers: apiHeaders() });
 }
 
+const CHAT_HISTORY_KEY = 'enzo_chat_history_v1';
+const PLANNER_STATE_KEY = 'enzo_planner_state_v1';
+
+function readLocalJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch (_err) {
+    return fallback;
+  }
+}
+
+function writeLocalJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (_err) {
+    // Ignore quota/storage issues and keep the app usable.
+  }
+}
+
 async function initModelAlertBanner() {
   const banner = document.getElementById('modelAlertBanner');
   const textEl = document.getElementById('modelAlertText');
@@ -716,6 +737,22 @@ function setPrettyOutput(elId, mode, payload, context = {}) {
 /* ---------- LinkedIn Preview ---------- */
 let currentPreviewText = '';
 
+function firstMeaningfulLine(text) {
+  const lines = String(text || '')
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return lines[0] || '';
+}
+
+function plannerTitleFromText(text, fallback = 'Untitled draft') {
+  const first = firstMeaningfulLine(text);
+  if (!first) return fallback;
+  const compact = first.replace(/\s+/g, ' ').trim();
+  return compact.length <= 80 ? compact : `${compact.slice(0, 79)}…`;
+}
+
 function updateLinkedinPreview(text, summary) {
   const body = document.getElementById('linkedinPreviewContent');
   const count = document.getElementById('linkedinCharCount');
@@ -742,15 +779,76 @@ function primaryDraftFromResponse(mode, payload) {
 }
 
 /* ---------- Chat ---------- */
-function appendChatMessage(role, contentHtml, rich = false) {
+const chatHistoryState = {
+  messages: [],
+};
+
+async function persistChatHistory() {
+  writeLocalJson(CHAT_HISTORY_KEY, chatHistoryState.messages);
+  await postJson('/api/chat/history', { messages: chatHistoryState.messages });
+}
+
+async function loadChatHistory() {
+  const local = readLocalJson(CHAT_HISTORY_KEY, []);
+  if (Array.isArray(local) && local.length) {
+    chatHistoryState.messages = local;
+    return;
+  }
+  const remote = await getJson('/api/chat/history');
+  const messages = Array.isArray(remote?.messages) ? remote.messages : [];
+  chatHistoryState.messages = messages;
+  writeLocalJson(CHAT_HISTORY_KEY, messages);
+}
+
+function renderChatHistory() {
+  const wrap = document.getElementById('chatMessages');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  chatHistoryState.messages.forEach((item) => {
+    const block = document.createElement('div');
+    const role = String(item?.role || 'system');
+    const rich = !!item?.rich;
+    const messageId = String(item?.id || '');
+    block.className = `chat-msg ${role}`;
+    if (messageId) block.dataset.chatId = messageId;
+    const label = role === 'user' ? 'You' : role === 'assistant' ? 'Enzo' : 'System';
+    block.innerHTML = `<div class="chat-msg-head">${label}</div>${rich ? `<div class="chat-rich">${String(item?.content || '')}</div>` : `<div>${esc(item?.content || '').replaceAll('\n', '<br>')}</div>`}`;
+    wrap.appendChild(block);
+  });
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function removeChatMessage(block) {
+  if (!(block instanceof HTMLElement)) return;
+  const messageId = String(block.dataset.chatId || '').trim();
+  if (messageId) {
+    chatHistoryState.messages = chatHistoryState.messages.filter((item) => String(item?.id || '') !== messageId);
+    persistChatHistory().catch(() => {});
+  }
+  block.remove();
+}
+
+function appendChatMessage(role, contentHtml, rich = false, options = {}) {
   const wrap = document.getElementById('chatMessages');
   if (!wrap) return null;
+  const persist = options.persist !== false;
+  const messageId = options.messageId || `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const block = document.createElement('div');
   block.className = `chat-msg ${role}`;
+  block.dataset.chatId = messageId;
   const label = role === 'user' ? 'You' : role === 'assistant' ? 'Enzo' : 'System';
   block.innerHTML = `<div class="chat-msg-head">${label}</div>${rich ? `<div class="chat-rich">${contentHtml}</div>` : `<div>${esc(contentHtml).replaceAll('\n', '<br>')}</div>`}`;
   wrap.appendChild(block);
   wrap.scrollTop = wrap.scrollHeight;
+  if (persist) {
+    chatHistoryState.messages.push({
+      id: messageId,
+      role,
+      content: rich ? String(contentHtml || '') : String(contentHtml || ''),
+      rich,
+    });
+    persistChatHistory().catch(() => {});
+  }
   return block;
 }
 
@@ -935,9 +1033,9 @@ async function finalizeBriefAndGenerate() {
   const enrichedInput = buildBriefedGenerateInput(chatBriefState.baseRequest, answers);
   appendChatMessage('system', 'Thanks. Generating draft from your brief...');
 
-  const thinking = appendChatMessage('system', 'Working on it...');
+  const thinking = appendChatMessage('system', 'Working on it...', false, { persist: false });
   const payload = await runModeRequest('generate', enrichedInput, context);
-  thinking?.remove();
+  removeChatMessage(thinking);
 
   appendChatMessage(
     'assistant',
@@ -957,6 +1055,12 @@ async function finalizeBriefAndGenerate() {
     const scoreSummary = payload?.scores ? `Scores: ${JSON.stringify(payload.scores)}` : '';
     updateLinkedinPreview(draft, scoreSummary);
   }
+  ingestPlannerPayload('generate', payload, {
+    topic: chatBriefState.baseRequest,
+    original_text: enrichedInput,
+    platform: context.platform,
+    goal: context.goal,
+  });
 
   resetChatBriefState();
 }
@@ -1228,9 +1332,9 @@ chatForm?.addEventListener('submit', async (e) => {
     return;
   }
 
-  const thinking = appendChatMessage('system', 'Working on it...');
+  const thinking = appendChatMessage('system', 'Working on it...', false, { persist: false });
   const payload = await runModeRequest(mode, text, context);
-  thinking?.remove();
+  removeChatMessage(thinking);
 
   appendChatMessage(
     'assistant',
@@ -1250,6 +1354,12 @@ chatForm?.addEventListener('submit', async (e) => {
     const scoreSummary = payload?.scores ? `Scores: ${JSON.stringify(payload.scores)}` : '';
     updateLinkedinPreview(draft, scoreSummary);
   }
+  ingestPlannerPayload(mode, payload, {
+    topic: text,
+    original_text: text,
+    platform: context.platform,
+    goal: context.goal,
+  });
 
   resetChatComposer();
 });
@@ -1260,14 +1370,29 @@ document.getElementById('copyLinkedinPreview')?.addEventListener('click', async 
   appendChatMessage('system', 'LinkedIn preview copied.');
 });
 
+document.getElementById('savePreviewToPlanner')?.addEventListener('click', () => {
+  if (!currentPreviewText.trim()) return;
+  addPlannerPosts(
+    [
+      {
+        id: `preview|${currentPreviewText.length}|${plannerTitleFromText(currentPreviewText)}`,
+        title: plannerTitleFromText(currentPreviewText, 'Saved chat draft'),
+        excerpt: currentPreviewText,
+        status: 'draft',
+        meta_label: 'Saved from chat',
+      },
+    ],
+    { persist: true, render: true },
+  );
+  appendChatMessage('system', 'Preview saved to planner.');
+});
+
 document.getElementById('usePreviewInRewrite')?.addEventListener('click', () => {
   if (!currentPreviewText.trim()) return;
   const field = document.querySelector('#rewriteForm textarea[name="content"]');
   if (field) field.value = currentPreviewText;
   switchToTab('rewrite');
 });
-
-appendChatMessage('assistant', 'Choose a mode and prompt. I will return readable cards and update LinkedIn preview.');
 
 /* ---------- Upload / Ingest ---------- */
 const fileIngestForm = document.getElementById('fileIngestForm');
@@ -1378,6 +1503,7 @@ rewriteForm?.addEventListener('submit', async (e) => {
   const response = await postJson('/api/rewrite', payload);
   setPrettyOutput('rewriteOutput', 'rewrite', response, { original_text: payload.content, model: payload.model });
   if (!response?.error) updateLinkedinPreview(response.rewritten_version || '', `Scores: ${JSON.stringify(response.scores || {})}`);
+  ingestPlannerPayload('rewrite', response, payload);
 
   const compare = document.getElementById('rewriteCompare');
   if (compare) {
@@ -1405,6 +1531,7 @@ generateForm?.addEventListener('submit', async (e) => {
     model: payload.model,
   });
   if (!out?.error) updateLinkedinPreview(out.final_draft || '', `Scores: ${JSON.stringify(out.scores || {})}`);
+  ingestPlannerPayload('generate', out, payload);
 });
 
 /* ---------- Expand ---------- */
@@ -1414,6 +1541,7 @@ expandForm?.addEventListener('submit', async (e) => {
   const payload = formToObj(expandForm);
   const out = await postJson('/api/expand', payload);
   setPrettyOutput('expandOutput', 'expand', out, { source_text: payload.content, model: payload.model });
+  ingestPlannerPayload('expand', out, payload);
 });
 
 /* ---------- Planner ---------- */
@@ -1448,6 +1576,13 @@ function plannerPostId(status, title, dateLabel = '') {
   return `${status}|${String(title || '').trim().toLowerCase()}|${String(dateLabel || '').trim()}`;
 }
 
+function plannerStatusLabel(status) {
+  if (status === 'published') return 'Published';
+  if (status === 'scheduled') return 'Scheduled';
+  if (status === 'draft') return 'Draft';
+  return 'Created';
+}
+
 function plannerShort(text, max = 130) {
   const value = String(text || '').trim().replace(/\s+/g, ' ');
   if (!value) return '';
@@ -1463,8 +1598,62 @@ function plannerCardHtml(post) {
   </article>`;
 }
 
-function addPlannerPosts(items) {
+async function persistPlannerState() {
+  writeLocalJson(PLANNER_STATE_KEY, plannerState.posts);
+  await postJson('/api/planner/state', { posts: plannerState.posts });
+}
+
+function plannerPostsFromDrafts(drafts) {
+  if (!Array.isArray(drafts)) return [];
+  return drafts
+    .map((draft) => {
+      const outputText = String(draft?.output_text || '').trim();
+      if (!outputText) return null;
+      const createdAt = String(draft?.created_at || '').trim();
+      return {
+        id: `draft|${draft?.id || plannerPostId('draft', outputText, createdAt)}`,
+        title: plannerTitleFromText(outputText, `${String(draft?.draft_type || 'draft')} draft`),
+        excerpt: outputText,
+        status: 'draft',
+        meta_label: `Saved ${String(draft?.draft_type || 'draft')}`,
+        date_label: createdAt ? createdAt.slice(0, 10) : '',
+      };
+    })
+    .filter(Boolean);
+}
+
+async function loadPlannerState() {
+  const local = readLocalJson(PLANNER_STATE_KEY, []);
+  if (Array.isArray(local) && local.length) {
+    plannerState.posts = local;
+    return 'local';
+  }
+
+  const remote = await getJson('/api/planner/state');
+  const remotePosts = Array.isArray(remote?.posts) ? remote.posts : [];
+  if (remotePosts.length) {
+    plannerState.posts = remotePosts;
+    writeLocalJson(PLANNER_STATE_KEY, remotePosts);
+    return 'remote';
+  }
+
+  const draftsOut = await getJson('/api/drafts?limit=50');
+  const drafts = Array.isArray(draftsOut?.drafts) ? draftsOut.drafts : [];
+  const draftPosts = plannerPostsFromDrafts(drafts);
+  if (draftPosts.length) {
+    plannerState.posts = draftPosts;
+    writeLocalJson(PLANNER_STATE_KEY, draftPosts);
+    persistPlannerState().catch(() => {});
+    return 'drafts';
+  }
+
+  return 'seed';
+}
+
+function addPlannerPosts(items, options = {}) {
   if (!Array.isArray(items) || !items.length) return;
+  const persist = options.persist !== false;
+  const render = options.render === true;
   const merged = new Map(plannerState.posts.map((p) => [p.id, p]));
   items.forEach((item) => {
     const title = String(item?.title || '').trim();
@@ -1472,16 +1661,18 @@ function addPlannerPosts(items) {
     const status = normalizePlannerStatus(item?.status);
     const dateLabel = String(item?.date_label || '').trim();
     const post = {
-      id: plannerPostId(status, title, dateLabel),
+      id: String(item?.id || plannerPostId(status, title, dateLabel)),
       title,
       excerpt: String(item?.excerpt || '').trim(),
       status,
-      meta_label: String(item?.meta_label || 'Created').trim(),
+      meta_label: String(item?.meta_label || plannerStatusLabel(status)).trim(),
       date_label: dateLabel,
     };
     merged.set(post.id, post);
   });
   plannerState.posts = Array.from(merged.values());
+  if (persist) persistPlannerState().catch(() => {});
+  if (render) renderPlannerBoard();
 }
 
 function filteredPlannerPosts() {
@@ -1521,6 +1712,36 @@ function renderPlannerBoard() {
 function ingestPlannerPayload(mode, payload, request = {}) {
   if (!payload || payload.error) return;
   const posts = [];
+
+  if (mode === 'generate' && payload.final_draft) {
+    posts.push({
+      id: payload.draft_id ? `draft|${payload.draft_id}` : undefined,
+      title: plannerTitleFromText(payload.final_draft, String(request.topic || 'Generated draft')),
+      excerpt: String(payload.final_draft || ''),
+      status: 'draft',
+      meta_label: 'Saved generate',
+    });
+  }
+
+  if (mode === 'rewrite' && payload.rewritten_version) {
+    posts.push({
+      id: payload.draft_id ? `draft|${payload.draft_id}` : undefined,
+      title: plannerTitleFromText(payload.rewritten_version, 'Rewritten draft'),
+      excerpt: String(payload.rewritten_version || ''),
+      status: 'draft',
+      meta_label: 'Saved rewrite',
+    });
+  }
+
+  if (mode === 'expand' && payload.full_draft) {
+    posts.push({
+      id: payload.draft_id ? `draft|${payload.draft_id}` : undefined,
+      title: plannerTitleFromText(payload.full_draft, 'Expanded draft'),
+      excerpt: String(payload.full_draft || ''),
+      status: 'draft',
+      meta_label: 'Saved expand',
+    });
+  }
 
   if (mode === 'plan') {
     const seeds = Array.isArray(payload.posts) ? payload.posts : [];
@@ -1590,8 +1811,7 @@ function ingestPlannerPayload(mode, payload, request = {}) {
     });
   }
 
-  addPlannerPosts(posts);
-  renderPlannerBoard();
+  addPlannerPosts(posts, { persist: true, render: true });
 }
 
 function seedPlannerPosts() {
@@ -1617,8 +1837,7 @@ function seedPlannerPosts() {
       meta_label: 'Published',
       date_label: 'Feb 12',
     },
-  ]);
-  renderPlannerBoard();
+  ], { persist: true, render: true });
 }
 
 document.getElementById('plannerSearchInput')?.addEventListener('input', (e) => {
@@ -1639,18 +1858,15 @@ document.querySelectorAll('.planner-add-card').forEach((btn) => {
         title: String(title).trim(),
         excerpt: String(excerpt).trim(),
         status,
-        meta_label: status === 'published' ? 'Published' : status === 'scheduled' ? 'Scheduled' : 'Created',
+        meta_label: plannerStatusLabel(status),
       },
-    ]);
-    renderPlannerBoard();
+    ], { persist: true, render: true });
   });
 });
 
 document.getElementById('plannerLabelsBtn')?.addEventListener('click', () => {
   appendChatMessage('system', 'Labels are coming next. For now, use search to filter posts quickly.');
 });
-
-seedPlannerPosts();
 
 const planForm = document.getElementById('planForm');
 planForm?.addEventListener('submit', async (e) => {
@@ -1868,4 +2084,26 @@ neo4jImportForm?.addEventListener('submit', async (e) => {
   );
 });
 
-initModelAlertBanner();
+async function initializeApp() {
+  try {
+    await loadChatHistory();
+  } catch (_err) {
+    // Ignore persistence load issues and continue with a usable app.
+  }
+  renderChatHistory();
+  if (!chatHistoryState.messages.length) {
+    appendChatMessage('assistant', 'Choose a mode and prompt. I will return readable cards and update LinkedIn preview.');
+  }
+
+  try {
+    const plannerSource = await loadPlannerState();
+    if (plannerSource === 'seed') seedPlannerPosts();
+    else renderPlannerBoard();
+  } catch (_err) {
+    seedPlannerPosts();
+  }
+
+  initModelAlertBanner();
+}
+
+initializeApp();

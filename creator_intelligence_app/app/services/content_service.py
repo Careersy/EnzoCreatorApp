@@ -884,6 +884,23 @@ class ContentIntelligenceService:
     def get_settings(self, key: str) -> dict[str, Any] | None:
         return self.db.get_setting(key)
 
+    def list_saved_drafts(self, limit: int = 100) -> list[dict[str, Any]]:
+        return self.db.list_drafts(limit=limit)
+
+    def save_chat_history(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
+        self.db.upsert_setting("chat_history", {"messages": messages})
+        return {"saved": True, "message_count": len(messages)}
+
+    def get_chat_history(self) -> dict[str, Any]:
+        return self.db.get_setting("chat_history") or {"messages": []}
+
+    def save_planner_state(self, posts: list[dict[str, Any]]) -> dict[str, Any]:
+        self.db.upsert_setting("planner_state", {"posts": posts})
+        return {"saved": True, "post_count": len(posts)}
+
+    def get_planner_state(self) -> dict[str, Any]:
+        return self.db.get_setting("planner_state") or {"posts": []}
+
     def import_existing_knowledge_graph_to_neo4j(
         self,
         clear_existing: bool = False,

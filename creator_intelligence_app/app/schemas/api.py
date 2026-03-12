@@ -170,6 +170,14 @@ class SettingsRequest(BaseModel):
     value: dict[str, Any]
 
 
+class ChatHistoryRequest(BaseModel):
+    messages: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class PlannerStateRequest(BaseModel):
+    posts: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class Neo4jImportRequest(BaseModel):
     clear_existing: bool = False
     dry_run: bool = False
